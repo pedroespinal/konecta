@@ -1,0 +1,42 @@
+{
+  "parameters": {
+    "latest_version": {
+      "defaultValue": {
+        "value": "1.0.6"
+      },
+      "description": "Versión más reciente de Konecta disponible para descarga",
+      "valueType": "STRING"
+    },
+    "min_required_version": {
+      "defaultValue": {
+        "value": "1.0.0"
+      },
+      "description": "Versión mínima soportada (por debajo = actualización forzada)",
+      "valueType": "STRING"
+    },
+    "release_notes_es": {
+      "defaultValue": {
+        "value": "• Hardening de seguridad: detección de root, Frida y MITM\n• ProGuard/R8 activado en builds de release\n• Mejoras de rendimiento y estabilidad"
+      },
+      "description": "Notas del release actual (español)",
+      "valueType": "STRING"
+    },
+    "update_url": {
+      "defaultValue": {
+        "value": "https://github.com/pedroespinal/konecta/releases/latest"
+      },
+      "description": "URL donde el usuario descarga la actualización",
+      "valueType": "STRING"
+    },
+    "update_check_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Habilitar o deshabilitar el sistema de actualización sin publicar nueva app",
+      "valueType": "BOOLEAN"
+    }
+  },
+  "version": {
+    "description": "Konecta v1.0.6 — configuración inicial de Remote Config"
+  }
+}
