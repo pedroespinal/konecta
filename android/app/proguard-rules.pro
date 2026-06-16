@@ -89,3 +89,11 @@
 -obfuscationdictionary proguard-dict.txt
 -classobfuscationdictionary proguard-dict.txt
 -packageobfuscationdictionary proguard-dict.txt
+
+# Optimizaciones agresivas para reducir superficie de analisis
+-optimizationpasses 5
+-allowaccessmodification
+-repackageclasses ''
+
+# NO preservar nombres de la clase de seguridad — que sean ilegibles
+-dontnote com.pedroespinal.konecta.MainActivity

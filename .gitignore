@@ -1,6 +1,10 @@
 # ─── SEGURIDAD — NUNCA SUBIR ─────────────────────────────────────
 keys/
+*.jks
+*.keystore
 *.hex
+key.properties
+android/key.properties
 google-services.json
 GoogleService-Info.plist
 .env
