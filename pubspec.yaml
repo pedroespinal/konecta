@@ -53,9 +53,16 @@ dependencies:
   intl_phone_number_input: ^0.7.4  # Formato internacional
 
   # Fase 4: Llamadas WebRTC
-  flutter_webrtc: ^0.10.0          # Voz y video P2P
+  flutter_webrtc: ^0.11.7          # Voz y video P2P
   record: ^5.2.0                   # Grabacion de notas de voz
   just_audio: ^0.9.40              # Reproduccion de audio
+
+  # Firebase — notificaciones de actualización
+  firebase_core: ^3.6.0
+  firebase_remote_config: ^5.1.0
+
+  # Abrir URLs (link de descarga de actualización)
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:

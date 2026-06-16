@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../../core/services/update_checker.dart';
 import '../../shared/widgets/konecta_footer.dart';
+import '../../shared/widgets/update_dialog.dart';
 import '../chat/screens/new_chat_screen.dart';
 import 'widgets/chats_tab.dart';
 import 'widgets/calls_tab.dart';
@@ -24,6 +27,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     StoriesTab(),
     ContactsTab(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Verificar actualización después del primer frame
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+  }
+
+  Future<void> _checkForUpdate() async {
+    final info = await UpdateChecker.check();
+    if (!info.updateAvailable) return;
+    if (!mounted) return;
+
+    final accepted = await UpdateDialog.show(context, info);
+    if (accepted && info.updateUrl.isNotEmpty) {
+      final uri = Uri.tryParse(info.updateUrl);
+      if (uri != null && await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
