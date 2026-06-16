@@ -1,0 +1,13 @@
+# Normalizar line endings a LF en el repo, checkout como es en cada OS
+* text=auto eol=lf
+
+# Archivos binarios — no modificar
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.keystore binary
+*.aab binary
+*.apk binary

@@ -1,0 +1,66 @@
+name: konecta
+description: "Konecta - Mensajeria segura y privada"
+publish_to: 'none'
+
+version: 1.0.6+8
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+
+  # Navegacion
+  go_router: ^14.8.1
+
+  # UI / Fuentes / Iconos
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.16
+  cupertino_icons: ^1.0.8
+
+  # Almacenamiento seguro
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.3
+
+  # Informacion de la app
+  package_info_plus: ^8.3.0
+
+  # Criptografia — Signal Protocol + firma de autoria
+  cryptography: ^2.7.0
+  convert: ^3.1.2
+
+  # Internacionalizacion
+  intl: ^0.20.2
+
+  # Fase 2: Auth
+  local_auth: ^2.3.0
+  pinput: ^5.0.0
+  country_code_picker: ^3.0.0
+  image_picker: ^1.1.2
+  permission_handler: ^11.4.0
+
+  # Fase 3: Mensajeria
+  sqflite: ^2.4.2              # Base de datos local SQLite
+  path: ^1.9.1                 # Rutas de archivos
+  web_socket_channel: ^3.0.2   # WebSocket para relay
+  uuid: ^4.5.1                 # IDs unicos de mensajes
+  intl_phone_number_input: ^0.7.4  # Formato internacional
+
+  # Fase 4: Llamadas WebRTC
+  flutter_webrtc: ^0.10.0          # Voz y video P2P
+  record: ^5.2.0                   # Grabacion de notas de voz
+  just_audio: ^0.9.40              # Reproduccion de audio
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

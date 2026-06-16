@@ -1,0 +1,55 @@
+# ─── SEGURIDAD — NUNCA SUBIR ─────────────────────────────────────
+keys/
+*.hex
+google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+**/secrets/
+firebase-debug.log
+
+# ─── Flutter/Dart/Pub ────────────────────────────────────────────
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# ─── IntelliJ / Android Studio ───────────────────────────────────
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# ─── VS Code ─────────────────────────────────────────────────────
+# .vscode/   # comentado — algunos configs son útiles en equipo
+
+# ─── macOS ───────────────────────────────────────────────────────
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# ─── Misc ────────────────────────────────────────────────────────
+*.class
+*.log
+*.pyc
+*.swp
+
+# ─── Android build artifacts ─────────────────────────────────────
+app.*.symbols
+app.*.map.json
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ─── ProGuard mapping (contiene nombres reales de clases) ─────────
+/android/app/mapping.txt

@@ -1,0 +1,9 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - tool/**   # Scripts CLI — usan print() intencionalmente
+
+linter:
+  rules:
+    avoid_print: true
