@@ -9,7 +9,6 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.BufferedReader
 import java.io.File
-import java.io.FileReader
 
 class MainActivity : FlutterActivity() {
 
@@ -93,7 +92,7 @@ class MainActivity : FlutterActivity() {
     private fun checkDangerousProps(): Boolean {
         return try {
             val process = Runtime.getRuntime().exec(arrayOf("getprop"))
-            val reader = BufferedReader(FileReader(process.inputStream.fd))
+            val reader = BufferedReader(java.io.InputStreamReader(process.inputStream))
             var line: String?
             var found = false
             while (reader.readLine().also { line = it } != null) {

@@ -53,8 +53,8 @@ dependencies:
   intl_phone_number_input: ^0.7.4  # Formato internacional
 
   # Fase 4: Llamadas WebRTC
-  flutter_webrtc: ^0.11.7          # Voz y video P2P
-  record: ^5.2.0                   # Grabacion de notas de voz
+  flutter_webrtc: ^1.5.1           # Voz y video P2P
+  record: 5.1.2                    # Grabacion de notas de voz (5.2.x rompe record_linux)
   just_audio: ^0.9.40              # Reproduccion de audio
 
   # Firebase — notificaciones de actualización
@@ -63,6 +63,11 @@ dependencies:
 
   # Abrir URLs (link de descarga de actualización)
   url_launcher: ^6.3.1
+
+dependency_overrides:
+  # record_linux 0.7.2 no implementa record_platform_interface >=1.6.0
+  # Forzar version compatible hasta que record_linux publique un fix
+  record_platform_interface: 1.6.0
 
 dev_dependencies:
   flutter_test:
