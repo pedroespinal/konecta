@@ -69,4 +69,18 @@ class L10nEn extends AppLocalizations {
   @override String get networkError => 'No connection. Check your internet.';
   @override String get serverError => 'Server error. Please try again later.';
   @override String get unknownError => 'An unexpected error occurred.';
+
+  @override String get markAllRead => 'Mark all as read';
+  @override String get archivedChats => 'Archived chats';
+  @override String get accessWithoutPin => 'Access without PIN';
+  @override String get pinSaveError => 'Error saving PIN. Please try again.';
+  @override String get chooseTheme => 'App theme';
+  @override String get chooseLanguage => 'Language';
+  @override String get signOut => 'Sign out';
+  @override String get deleteAccount => 'Delete account';
+  @override String get deleteAccountConfirm => 'Delete your account? This action cannot be undone.';
+  @override String get changePinTitle => 'Change PIN';
+  @override String get accountSection => 'Account';
+  @override String get generalSection => 'General';
+  @override String get developer => 'Developer';
 }

@@ -11,6 +11,7 @@ import '../../features/calls/screens/call_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/chat/screens/new_chat_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/settings/settings_screen.dart';
 import '../../features/splash/splash_screen.dart';
 
 abstract final class AppRoutes {
@@ -103,6 +104,10 @@ final appRouter = GoRouter(
           isOutgoing: args?['isOutgoing'] as bool? ?? true,
         );
       },
+    ),
+    GoRoute(
+      path: AppRoutes.settings,
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );

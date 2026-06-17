@@ -90,6 +90,21 @@ abstract class AppLocalizations {
   String get networkError;
   String get serverError;
   String get unknownError;
+
+  // ── Configuracion extra ───────────────────────────────────────────────────
+  String get markAllRead;
+  String get archivedChats;
+  String get accessWithoutPin;
+  String get pinSaveError;
+  String get chooseTheme;
+  String get chooseLanguage;
+  String get signOut;
+  String get deleteAccount;
+  String get deleteAccountConfirm;
+  String get changePinTitle;
+  String get accountSection;
+  String get generalSection;
+  String get developer;
 }
 
 class _KonectaLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

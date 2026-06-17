@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/database/models/chat_model.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/chat/providers/chat_provider.dart';
 import '../../../features/chat/screens/chat_screen.dart';
@@ -32,9 +34,80 @@ class ChatsTab extends ConsumerWidget {
               onPressed: () {},
               tooltip: l10n.search,
             ),
-            IconButton(
+            PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert_rounded),
-              onPressed: () {},
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              onSelected: (value) {
+                switch (value) {
+                  case 'new_group':
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Grupos: próximamente'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  case 'archived':
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Archivados: próximamente'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  case 'mark_read':
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Todo marcado como leído'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  case 'settings':
+                    context.push(AppRoutes.settings);
+                }
+              },
+              itemBuilder: (ctx) {
+                final l10n = AppLocalizations.of(ctx);
+                return [
+                  PopupMenuItem(
+                    value: 'new_group',
+                    child: Row(children: [
+                      const Icon(Icons.group_add_rounded, size: 20),
+                      const SizedBox(width: 12),
+                      Text(l10n.newGroup,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                    ]),
+                  ),
+                  PopupMenuItem(
+                    value: 'mark_read',
+                    child: Row(children: [
+                      const Icon(Icons.done_all_rounded, size: 20),
+                      const SizedBox(width: 12),
+                      Text(l10n.markAllRead,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                    ]),
+                  ),
+                  PopupMenuItem(
+                    value: 'archived',
+                    child: Row(children: [
+                      const Icon(Icons.archive_rounded, size: 20),
+                      const SizedBox(width: 12),
+                      Text(l10n.archivedChats,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                    ]),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'settings',
+                    child: Row(children: [
+                      const Icon(Icons.settings_rounded, size: 20),
+                      const SizedBox(width: 12),
+                      Text(l10n.settings,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                    ]),
+                  ),
+                ];
+              },
             ),
           ],
         ),

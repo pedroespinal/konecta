@@ -65,8 +65,9 @@ class _OtpScreenState extends State<OtpScreen> {
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
 
-    // Simulacion: el OTP de prueba es 123456
-    if (pin == '123456') {
+    // Modo demo: cualquier código de 6 dígitos es válido
+    // Fase 3 conectará un servidor SMS real
+    if (pin.length == 6) {
       context.pushReplacement(AppRoutes.profileSetup, extra: widget.phoneNumber);
     } else {
       setState(() {
@@ -138,12 +139,40 @@ class _OtpScreenState extends State<OtpScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Enviamos un código de 6 dígitos a\n${widget.phoneNumber}',
+                      'Ingresa el código enviado a\n${widget.phoneNumber}',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                         height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: KonectaColors.accent.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: KonectaColors.accent.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded,
+                              color: KonectaColors.accent, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Versión demo — usa cualquier código de 6 dígitos',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: KonectaColors.accent,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 36),

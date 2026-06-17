@@ -48,9 +48,20 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
 
   Future<void> _savePin(String pin) async {
     setState(() => _isSaving = true);
-    await ref.read(authProvider.notifier).setupPin(pin);
-    if (!mounted) return;
-    context.pushReplacement(AppRoutes.biometricSetup);
+    try {
+      await ref.read(authProvider.notifier).setupPin(pin);
+      if (!mounted) return;
+      context.pushReplacement(AppRoutes.biometricSetup);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al guardar el PIN. Intenta de nuevo.'),
+          backgroundColor: KonectaColors.error,
+        ),
+      );
+    }
   }
 
   void _skip() => context.go(AppRoutes.home);
@@ -223,7 +234,31 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                             onCompleted: _onPinCompleted,
                           ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
+
+                    // Opción de acceder sin PIN
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isSaving ? null : _skip,
+                        icon: const Icon(Icons.no_encryption_rounded, size: 18),
+                        label: Text(
+                          'Acceder sin PIN',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
 
                     // Indicador de progreso de los pasos
                     Row(

@@ -1,4 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Biometría / huella digital -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+    <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
+    <!-- Red -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Cámara y micrófono (llamadas) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Vibración (notificaciones) -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- Almacenamiento (compartir medios) — API 33+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+    <!-- Almacenamiento legacy (API ≤ 32) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
     <application
         android:label="konecta"
         android:name="${applicationName}"
