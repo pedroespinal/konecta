@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
+import 'core/notifications/fcm_service.dart';
 import 'core/security/integrity_monitor.dart';
 import 'firebase_options.dart';
 
@@ -28,6 +29,9 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
   ));
+
+  // Push notifications (FCM)
+  unawaited(FcmService.initialize());
 
   // Verificaciones de seguridad en segundo plano
   unawaited(IntegrityMonitor.runStartupChecks());

@@ -63,6 +63,33 @@ class SecureKeyStore {
     await _storage.delete(key: 'kc_pin_hash');
   }
 
+  // ── PIN de pánico (decoy mode) ─────────────────────────────────────────────
+
+  static Future<void> saveDecoyPinHash(String pin) async {
+    final salt = KonectaCrypto.generateSalt();
+    final derived = await KonectaCrypto.derivePinKey(pin, salt);
+    await _storage.write(key: 'kc_decoy_pin_salt', value: hex.encode(salt));
+    await _storage.write(key: 'kc_decoy_pin_hash', value: hex.encode(derived));
+  }
+
+  static Future<bool> verifyDecoyPin(String pin) async {
+    final saltHex = await _storage.read(key: 'kc_decoy_pin_salt');
+    final storedHash = await _storage.read(key: 'kc_decoy_pin_hash');
+    if (saltHex == null || storedHash == null) return false;
+    final derived = await KonectaCrypto.derivePinKey(pin, hex.decode(saltHex));
+    return hex.encode(derived) == storedHash;
+  }
+
+  static Future<bool> hasDecoyPin() async {
+    final hash = await _storage.read(key: 'kc_decoy_pin_hash');
+    return hash != null && hash.isNotEmpty;
+  }
+
+  static Future<void> deleteDecoyPin() async {
+    await _storage.delete(key: 'kc_decoy_pin_salt');
+    await _storage.delete(key: 'kc_decoy_pin_hash');
+  }
+
   // ── Perfil de usuario ─────────────────────────────────────────────────────
 
   static Future<void> saveUserProfile(KonectaUserProfile profile) async {

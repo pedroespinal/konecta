@@ -37,7 +37,7 @@ class _ChatSearchScreenState extends ConsumerState<ChatSearchScreen> {
                   .contains(_query.toLowerCase()))
           .toList(),
       loading: () => [],
-      error: (_, __) => [],
+      error: (e, st) => [],
     );
 
     return Scaffold(

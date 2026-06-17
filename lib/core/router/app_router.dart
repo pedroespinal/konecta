@@ -12,6 +12,7 @@ import '../../features/chat/screens/chat_screen.dart';
 import '../../features/chat/screens/new_chat_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/chat/screens/starred_messages_screen.dart';
+import '../../features/settings/screens/panic_pin_screen.dart';
 import '../../features/qr/qr_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/splash/splash_screen.dart';
@@ -34,6 +35,7 @@ abstract final class AppRoutes {
   static const String about = '/settings/about';
   static const String qr = '/qr';
   static const String starredMessages = '/starred-messages';
+  static const String panicPin = '/settings/panic-pin';
 }
 
 final appRouter = GoRouter(
@@ -120,6 +122,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.starredMessages,
       builder: (context, state) => const StarredMessagesScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.panicPin,
+      builder: (context, state) => const PanicPinScreen(),
     ),
   ],
 );

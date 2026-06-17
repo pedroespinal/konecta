@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/database/models/chat_model.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/providers/decoy_mode_provider.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/chat/providers/chat_provider.dart';
@@ -17,7 +18,8 @@ class ChatsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final chatsAsync = ref.watch(chatsProvider);
+    final isDecoy = ref.watch(decoyModeProvider);
+    final chatsAsync = isDecoy ? const AsyncValue<List<ChatModel>>.data([]) : ref.watch(chatsProvider);
 
     return CustomScrollView(
       slivers: [

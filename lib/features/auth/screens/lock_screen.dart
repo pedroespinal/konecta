@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:pinput/pinput.dart';
+import '../../../core/providers/decoy_mode_provider.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/security/crypto/secure_key_store.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/konecta_footer.dart';
 import '../../../shared/widgets/konecta_logo.dart';
@@ -50,17 +52,31 @@ class _LockScreenState extends ConsumerState<LockScreen> {
       _isVerifying = true;
       _hasError = false;
     });
+
+    // Verificar PIN real primero
     final valid = await ref.read(authProvider.notifier).verifyPin(pin);
     if (!mounted) return;
     if (valid) {
+      ref.read(decoyModeProvider.notifier).state = false;
       context.go(AppRoutes.home);
-    } else {
-      setState(() {
-        _hasError = true;
-        _isVerifying = false;
-      });
-      _pinController.clear();
+      return;
     }
+
+    // Verificar PIN de pánico (modo decoy)
+    final isDecoy = await SecureKeyStore.verifyDecoyPin(pin);
+    if (!mounted) return;
+    if (isDecoy) {
+      ref.read(authProvider.notifier).onBiometricSuccess();
+      ref.read(decoyModeProvider.notifier).state = true;
+      context.go(AppRoutes.home);
+      return;
+    }
+
+    setState(() {
+      _hasError = true;
+      _isVerifying = false;
+    });
+    _pinController.clear();
   }
 
   @override

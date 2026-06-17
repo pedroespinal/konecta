@@ -1,13 +1,26 @@
 // ARCHIVO GENERADO AUTOMATICAMENTE — no editar a mano
 // Actualizado por: dart run tool/bump_version.dart
 abstract final class AppVersion {
-  static const String version = '1.1.0';
-  static const int buildNumber = 12;
-  static const String fullVersion = '1.1.0+12';
-  static const String displayVersion = 'v1.1.0 (build 12)';
+  static const String version = '1.2.0';
+  static const int buildNumber = 13;
+  static const String fullVersion = '1.2.0+13';
+  static const String displayVersion = 'v1.2.0 (build 13)';
 
   // Historial de cambios — se actualiza con cada version aprobada
   static const List<VersionEntry> changelog = [
+    VersionEntry(
+      version: '1.2.0',
+      build: 13,
+      date: '2026-06-17',
+      changes: [
+        'Color firma Violeta Konecta — identidad visual única (#7C3AED)',
+        'PIN de pánico: PIN alternativo que muestra app vacía (modo decoy)',
+        'Backend Railway: Dockerfile + railway.toml para deploy en producción',
+        'FCM push notifications: integración firebase_messaging',
+        'Permisos POST_NOTIFICATIONS Android 13+',
+        'Lints: unnecessary_underscores eliminado',
+      ],
+    ),
     VersionEntry(
       version: '1.1.0',
       build: 12,

@@ -1,14 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/l10n/app_localizations.dart';
+import '../../../core/providers/decoy_mode_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
-class ContactsTab extends StatelessWidget {
+class ContactsTab extends ConsumerWidget {
   const ContactsTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final isDecoy = ref.watch(decoyModeProvider);
+
+    if (isDecoy) {
+      return CustomScrollView(
+        slivers: [
+          SliverAppBar(floating: true, snap: true, title: Text(l10n.navContacts)),
+          SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.people_outline_rounded,
+                      size: 56, color: KonectaColors.primary.withValues(alpha: 0.4)),
+                  const SizedBox(height: 12),
+                  Text('Sin contactos',
+                      style: GoogleFonts.inter(
+                          fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return CustomScrollView(
       slivers: [
         SliverAppBar(

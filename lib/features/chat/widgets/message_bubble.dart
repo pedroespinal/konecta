@@ -435,7 +435,7 @@ class _StatusIcon extends StatelessWidget {
         return const Icon(Icons.done_all_rounded, size: 13, color: Colors.white70);
       case MessageStatus.read:
         return const Icon(Icons.done_all_rounded,
-            size: 13, color: KonectaColors.accentLight);
+            size: 13, color: KonectaColors.primaryLight);
       case MessageStatus.failed:
         return const Icon(Icons.error_outline_rounded,
             size: 13, color: KonectaColors.error);

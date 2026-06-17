@@ -1,7 +1,7 @@
-# Guía de Usuario — Konecta v1.1.0
+# Guía de Usuario — Konecta v1.2.0
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.1.0 (build 12) — 17 de junio de 2026
+**Versión:** 1.2.0 (build 13) — 17 de junio de 2026
 
 ---
 
@@ -233,25 +233,29 @@ Cuando haya una versión nueva disponible en GitHub:
 
 ---
 
-## Novedades en v1.1.0
+## Novedades en v1.2.0
 
 | Función | Descripción |
 |---------|-------------|
-| 📷 Escáner QR | Escanea el QR de un contacto para agregarlo |
-| ⏱️ Mensajes efímeros | Mensajes que desaparecen: 5 min / 1h / 1 día / 7 días |
-| ✏️ Editar mensajes | Mantén presionado tu mensaje → Editar |
-| ⭐ Mensajes guardados | Destaca mensajes y accede desde Ajustes |
-| 💬 Estados reales | Publica estados de texto desde la pestaña Estado |
-| ↩️ Responder | Responde a mensajes específicos (operativo) |
-| 😀 Reacciones | 6 emojis rápidos por long-press en cualquier mensaje |
+| 🟣 Violeta Konecta | Nueva identidad visual — color firma exclusivo de Konecta |
+| 🚨 PIN de pánico | PIN alternativo que muestra app vacía — nadie sabrá que hay datos reales |
+| ☁️ Backend Railway | Relay Go listo para producción (deploy en Railway) |
+| 🔔 Push notifications | Integración FCM — notificaciones cuando la app está cerrada |
 
-## Próximas funciones — v1.2.0
+### PIN de pánico — cómo usarlo
+
+1. Ve a **Ajustes → Seguridad → PIN de pánico**
+2. Configura un PIN diferente al tuyo real
+3. Si alguien te pide el PIN de desbloqueo, ingresa el PIN de pánico
+4. Konecta se abre mostrando una app completamente vacía — sin chats, sin contactos
+5. Nadie sabrá que existen datos reales
+
+## Próximas funciones — v1.3.0
 
 | Función | Descripción |
 |---------|-------------|
 | 🎨 Stickers | Packs de stickers animados |
 | 🖼️ Fondos de chat | Personaliza el fondo de cada conversación |
-| 🔇 PIN de pánico | PIN alternativo que muestra app vacía (exclusivo Konecta) |
 | 📌 Fijar mensajes | Fija mensajes importantes en el chat |
 | 📅 Mensajes programados | Programa mensajes para más tarde |
 | 📍 Ubicación | Comparte tu ubicación en tiempo real |
@@ -288,7 +292,8 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **1.1.0** | jun 2026 | **Capa 1 completa**: Escáner QR funcional; mensajes efímeros configurables; editar mensajes; destacar y ver mensajes guardados; estados de texto reales; responder y reaccionar ya operativos; menú contextual mejorado |
+| **1.2.0** | jun 2026 | **Violeta Konecta** (nueva identidad); **PIN de pánico** (modo decoy); backend Railway listo; FCM push notifications |
+| 1.1.0 | jun 2026 | **Capa 1 completa**: Escáner QR funcional; mensajes efímeros configurables; editar mensajes; destacar y ver mensajes guardados; estados de texto reales; responder y reaccionar ya operativos; menú contextual mejorado |
 | 1.0.9 | jun 2026 | **Bug fixes de navegación**: botón Actualizar ahora abre GitHub; tap en Estado, Invitar amigos, Agregar amigos y Crear grupos ya funcionan; manifest Android con queries HTTPS para url_launcher |
 | 1.0.8 | jun 2026 | **Teal Esmeralda** (paleta nueva, dark mode legible); biometría CORREGIDA; lock screen navega al home; PIN back button corregido; QR personal; búsqueda de chats; bloqueo capturas; auto-lock; foto de perfil en Ajustes |
 | 1.0.7 | jun 2026 | Permisos biometría; OTP demo; PIN spinner; menú ⋮ funcional; pantalla Ajustes; persistencia tema/idioma; Acceder sin PIN |
@@ -343,13 +348,13 @@ Tap 🔍 in the Chats bar. Real-time filtering by name or message, with highligh
 - **Auto-lock:** Immediately / 1min / 5min / 15min / 1h / never
 - **Sign out / Delete account**
 
-### New in v1.1.0
+### New in v1.2.0
 
-QR Scanner · Disappearing messages (5 min / 1h / 1d / 7d) · Edit messages · Starred messages · Real text statuses · Reply to messages (live) · Emoji reactions (live)
+Violet Konecta brand color · Panic PIN (decoy mode — shows empty app) · Railway backend ready · FCM push notifications
 
-### Coming in v1.2.0
+### Coming in v1.3.0
 
-Sticker packs · Chat wallpapers · Panic PIN · Pinned messages · Scheduled messages · Location sharing · Polls in groups
+Sticker packs · Chat wallpapers · Pinned messages · Scheduled messages · Location sharing · Polls in groups
 
 ### Privacy
 

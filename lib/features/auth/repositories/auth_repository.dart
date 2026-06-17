@@ -154,6 +154,11 @@ class AuthRepository extends StateNotifier<AuthState> {
     }
   }
 
+  // PIN de pánico (modo decoy)
+  Future<void> setupDecoyPin(String pin) => SecureKeyStore.saveDecoyPinHash(pin);
+  Future<void> clearDecoyPin() => SecureKeyStore.deleteDecoyPin();
+  Future<bool> hasDecoyPin() => SecureKeyStore.hasDecoyPin();
+
   // Cerrar sesion (mantiene las claves, solo cierra la sesion activa)
   void signOut() {
     state = state.copyWith(status: AuthStatus.pinRequired);
