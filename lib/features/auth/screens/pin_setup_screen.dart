@@ -93,7 +93,9 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       ),
     );
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         actions: [
@@ -108,15 +110,17 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
           ),
         ],
       ),
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    const SizedBox(height: 40),
                     // Icono animado
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
@@ -303,10 +307,12 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 40),
             const KonectaFooter(),
           ],
         ),
       ),
+    ),
     );
   }
 }

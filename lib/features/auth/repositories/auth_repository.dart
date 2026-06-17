@@ -145,6 +145,15 @@ class AuthRepository extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.authenticated);
   }
 
+  // Actualizar foto de perfil
+  Future<void> updateAvatarPath(String path) async {
+    final profile = state.profile?.copyWith(avatarPath: path);
+    if (profile != null) {
+      await SecureKeyStore.saveUserProfile(profile);
+      state = state.copyWith(profile: profile);
+    }
+  }
+
   // Cerrar sesion (mantiene las claves, solo cierra la sesion activa)
   void signOut() {
     state = state.copyWith(status: AuthStatus.pinRequired);

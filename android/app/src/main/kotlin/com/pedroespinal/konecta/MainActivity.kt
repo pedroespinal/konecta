@@ -4,13 +4,14 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Debug
-import io.flutter.embedding.android.FlutterActivity
+import android.view.WindowManager
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.BufferedReader
 import java.io.File
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
 
     private val SECURITY_CHANNEL = "com.pedroespinal.konecta/security"
 
@@ -25,6 +26,17 @@ class MainActivity : FlutterActivity() {
                 "isRooted" -> result.success(isRooted())
                 "isFridaDetected" -> result.success(isFridaDetected())
                 "isDebugged" -> result.success(isDebugged())
+                "setScreenSecurity" -> {
+                    val enable = call.arguments as? Boolean ?: true
+                    runOnUiThread {
+                        if (enable) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                    }
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }

@@ -1,7 +1,7 @@
-# Guía de Usuario — Konecta v1.0.7
+# Guía de Usuario — Konecta v1.0.8
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.0.7 (build 9) — 17 de junio de 2026
+**Versión:** 1.0.8 (build 10) — 17 de junio de 2026
 
 ---
 
@@ -37,7 +37,7 @@ Al abrir Konecta por primera vez, verás la pantalla de registro.
 ### 2. Verificación OTP
 
 Si elegiste registro con número de teléfono:
-- Ingresa el código de 6 dígitos que se muestra en pantalla
+- Ingresa el código de 6 dígitos
 - **Modo demo:** cualquier código de 6 dígitos funciona
 - Si el código expira, toca **Reenviar código** después de 60 segundos
 
@@ -45,9 +45,10 @@ Si elegiste registro con número de teléfono:
 
 ### 3. Configuración de perfil
 
-1. Escribe tu nombre para mostrar
-2. Opcionalmente agrega una foto de perfil y una biografía
-3. Toca **Guardar y continuar**
+1. Toca el círculo de avatar para agregar una foto de perfil (galería o cámara)
+2. Escribe tu nombre para mostrar
+3. Opcionalmente agrega una biografía
+4. Toca **Crear cuenta y generar claves**
 
 ---
 
@@ -61,8 +62,10 @@ El PIN protege el acceso a Konecta si alguien toma tu teléfono.
 - El PIN se guarda cifrado con PBKDF2-SHA256
 
 **Si NO quieres PIN:**
-- Toca el botón **Acceder sin PIN** (visible debajo de la entrada de PIN)
+- Toca el botón **Acceder sin PIN** (siempre visible, no se oculta bajo el teclado)
 - Puedes configurar un PIN en cualquier momento desde **Ajustes → Seguridad**
+
+> **v1.0.8:** El botón Atrás durante la configuración de PIN ya no te saca del flujo de registro.
 
 ---
 
@@ -70,11 +73,11 @@ El PIN protege el acceso a Konecta si alguien toma tu teléfono.
 
 Después del PIN, puedes activar el desbloqueo biométrico:
 
-1. Toca **Activar huella digital** (o reconocimiento facial)
+1. Toca **Activar huella digital**
 2. Escanea tu huella cuando el teléfono lo solicite
 3. O toca **Usar solo PIN** / **Omitir** para hacerlo después desde Ajustes
 
-> **Requisito:** El dispositivo debe tener huella o Face ID configurado en los ajustes del sistema Android.
+> **v1.0.8:** La biometría ahora funciona correctamente en todos los dispositivos Android.
 
 ---
 
@@ -89,43 +92,36 @@ Después del PIN, puedes activar el desbloqueo biométrico:
 | ⭕ **Estados** | Historias de 24 horas |
 | 👥 **Contactos** | Lista de contactos |
 
-### Menú de 3 puntos ⋮
+### Botones de la barra superior
 
-Toca el botón **⋮** en la esquina superior derecha de Chats:
-
-| Opción | Función |
-|--------|---------|
-| Nuevo grupo | Crear conversación grupal |
-| Marcar todo como leído | Quita los badges de no leído |
-| Chats archivados | Ver chats archivados |
-| **Ajustes** | Abre la pantalla de configuración |
+| Botón | Función |
+|-------|---------|
+| 📷 QR | Abre tu código QR personal |
+| 🔍 Buscar | Busca chats por nombre o mensaje |
+| ⋮ Menú | Nuevo grupo, marcar leído, archivados, Ajustes |
 
 ---
 
-## Chats
+## Código QR — Agregar contactos
 
-### Iniciar un nuevo chat
+Toca el ícono QR en la barra superior de Chats (o en **Ajustes → Perfil → QR**):
 
-1. Toca el botón **+** (ícono de lápiz) en la esquina inferior derecha
-2. Busca o selecciona un contacto
-3. Escribe tu primer mensaje y envía
+- **Ver tu QR:** muestra tu código único para que otros te agreguen
+- **Copiar ID:** toca el ID para copiarlo al portapapeles
+- **Compartir:** comparte tu QR por otros medios
+- **Escanear QR:** (disponible en v1.1.0)
 
-### Funciones en el chat
-
-- **Texto:** escribe y envía mensajes de texto cifrados
-- **Audio:** mantén presionado el micrófono para grabar notas de voz
-- **Archivos:** comparte imágenes, documentos y más
-- **Cifrado visual:** el ícono 🔒 confirma que E2E está activo
-- **Estados de mensaje:** entregado ✓✓ → leído (marca azul)
+El QR está vinculado a tus claves Ed25519 y solo sirve para agregar contactos.
 
 ---
 
-## Llamadas
+## Búsqueda de chats
 
-- Toca el ícono 📞 en un chat para llamada de voz
-- Toca el ícono 📹 para videollamada
-- Las llamadas son **P2P (punto a punto)** — no pasan por servidores de Konecta
-- Cifradas con DTLS-SRTP
+Toca el ícono 🔍 en la barra superior:
+
+- Filtra chats en tiempo real por nombre o último mensaje
+- Los resultados resaltan en color teal las coincidencias
+- Toca cualquier resultado para abrir el chat
 
 ---
 
@@ -133,44 +129,78 @@ Toca el botón **⋮** en la esquina superior derecha de Chats:
 
 Accede desde el menú **⋮ → Ajustes** en la pantalla principal.
 
+### Perfil
+
+- **Foto de perfil:** toca el avatar para cambiarla (galería o cámara)
+- **Nombre y teléfono:** se muestran en el perfil
+- **ID:** toca para copiar tu ID único
+- **QR:** acceso directo a tu código QR
+
 ### Apariencia
 
 **Tema de la aplicación:**
-- 🌙 **Modo oscuro** — Fondo oscuro elegante, ideal para noche
-- ⚙️ **Según el sistema** — Sigue la configuración del teléfono automáticamente
-- ☀️ **Modo claro** — Fondo blanco, colores vivos, ideal para exterior
-
-> La preferencia se guarda automáticamente y se restaura al reiniciar la app.
+- 🌙 **Modo oscuro** — Teal Esmeralda sobre fondo casi negro (texto WCAG AA/AAA)
+- ⚙️ **Según el sistema** — Sigue la configuración del teléfono
+- ☀️ **Modo claro** — Teal sobre fondo azul muy claro
 
 **Idioma:**
-- 🇪🇸 **Español** — Interfaz completa en español
-- 🇺🇸 **English** — Full interface in English
-
-> El idioma cambia inmediatamente sin necesidad de reiniciar.
+- 🇪🇸 **Español**
+- 🇺🇸 **English**
 
 ### Seguridad
 
 - **Cambiar PIN** — Actualiza tu PIN de 6 dígitos
-- **Huella digital** — Activa, desactiva o reconfigura el desbloqueo biométrico
+- **Huella digital** — Configura el desbloqueo biométrico
+- **Mi código QR** — Comparte para agregar contactos
+
+### Privacidad
+
+- **Bloqueo de captura de pantalla** — Impide capturas y grabación de pantalla (activado por defecto)
+- **Bloqueo automático** — Bloquea Konecta automáticamente: inmediatamente / 1 min / 5 min / 15 min / 1 hora / nunca
 
 ### Cuenta
 
-- **Cerrar sesión** — Cierra la sesión activa. Tus claves y mensajes permanecen en el dispositivo.
-- **Eliminar cuenta** — Borra permanentemente tu cuenta, todas tus claves criptográficas y todos los datos locales. **Esta acción es irreversible.**
+- **Cerrar sesión** — Cierra la sesión activa (mantiene claves y mensajes)
+- **Eliminar cuenta** — Borra permanentemente cuenta, claves y todos los datos
 
 ### Acerca de
 
 - Versión actual de la app
-- Información del desarrollador (Pedro Espinal)
-- Detalles del protocolo de cifrado
+- Desarrollador: Pedro Espinal
+- Cifrado: Signal Protocol — E2E — AES-256-GCM
+- Próximas funciones en v1.1.0
+
+---
+
+## Chats
+
+### Iniciar un nuevo chat
+
+1. Toca el botón **+** en la esquina inferior derecha
+2. Selecciona un contacto
+3. Escribe tu primer mensaje y envía
+
+### Funciones en el chat
+
+- **Texto:** mensajes cifrados extremo a extremo
+- **Audio:** mantén presionado el micrófono para grabar
+- **Archivos:** imágenes, documentos y más
+- **Cifrado visual:** el ícono 🔒 confirma E2E activo
+- **Estados de mensaje:** enviado ✓ → entregado ✓✓ → leído (azul)
+
+---
+
+## Llamadas
+
+- Llamadas de voz y video **P2P (punto a punto)**
+- No pasan por servidores de Konecta
+- Cifradas con DTLS-SRTP
 
 ---
 
 ## Privacidad y seguridad
 
 ### Cifrado extremo a extremo
-
-Konecta implementa el **Signal Protocol** completo:
 
 | Componente | Tecnología |
 |-----------|------------|
@@ -181,24 +211,44 @@ Konecta implementa el **Signal Protocol** completo:
 | Llamadas | DTLS-SRTP (WebRTC) |
 | PIN | PBKDF2-SHA256 (100.000 iteraciones) |
 | Almacenamiento de claves | Android Keystore (hardware) |
+| Capturas de pantalla | FLAG_SECURE (bloqueadas por defecto) |
 
-### Principios de privacidad de Konecta
+### Principios de privacidad
 
 - Las claves privadas **nunca salen de tu dispositivo**
 - Konecta **no puede leer** tus mensajes ni llamadas
 - **No se venden ni comparten** tus datos
-- **No se requiere** número de teléfono (opción de solo usuario)
-- El servidor relay solo transmite datos cifrados — no puede descifrarlos
+- **No se requiere** número de teléfono
+- El servidor relay solo transmite datos cifrados
 
 ---
 
 ## Actualizaciones automáticas
 
-Cuando haya una versión nueva disponible en GitHub, verás un aviso al abrir Konecta:
+Cuando haya una versión nueva disponible en GitHub:
 
-- Toca **"Actualizar"** para ir a la página de descarga en GitHub Releases
-- Toca **"Ahora no"** para cerrar el aviso y actualizar más tarde
-- Si la actualización es **obligatoria** (cambio de seguridad crítico), el aviso no se puede cerrar
+- Toca **"Actualizar"** para ir a la página de descarga
+- Toca **"Ahora no"** para actualizar más tarde
+- Si es obligatoria (cambio de seguridad crítico), el aviso no se puede cerrar
+
+---
+
+## Próximas funciones — v1.1.0
+
+| Función | Descripción |
+|---------|-------------|
+| 😀 Reacciones | Reacciona a mensajes con emoji |
+| ↩️ Responder | Responde a un mensaje específico |
+| ⏱️ Mensajes efímeros | Mensajes que desaparecen automáticamente |
+| 🎨 Stickers | Packs de stickers animados |
+| 🖼️ Fondos de chat | Personaliza el fondo de cada conversación |
+| 🔇 PIN de pánico | PIN alternativo que muestra app vacía (exclusivo Konecta) |
+| ✏️ Editar mensajes | Edita un mensaje ya enviado |
+| 📌 Fijar mensajes | Fija mensajes importantes en el chat |
+| 📅 Mensajes programados | Programa mensajes para más tarde |
+| 📍 Ubicación | Comparte tu ubicación en tiempo real |
+| 📊 Encuestas | Crea encuestas en grupos |
+| 📁 Mensajes guardados | Nota para ti mismo |
 
 ---
 
@@ -210,20 +260,20 @@ En la versión actual (demo), el envío de SMS real no está activo. Ingresa cua
 **¿Qué pasa si olvido el PIN?**  
 Actualmente debes reinstalar la app. Una versión futura incluirá recuperación con copia de seguridad cifrada.
 
+**¿Por qué no puedo tomar capturas de pantalla?**  
+Konecta bloquea las capturas por seguridad. Puedes desactivarlo en **Ajustes → Privacidad → Bloqueo de captura**.
+
+**¿Cómo agrego un contacto?**  
+Comparte tu código QR (ícono QR en Chats o en Ajustes → Mi código QR) o tu ID de usuario.
+
 **¿El acceso sin PIN es seguro?**  
-Sin PIN de Konecta, el bloqueo depende del sistema Android (huella, patrón, PIN del sistema). Si el teléfono tiene bloqueo de pantalla, estás protegido.
+Sin PIN de Konecta, el bloqueo depende del sistema Android. Si el teléfono tiene bloqueo de pantalla, estás protegido.
 
 **¿Puedo usar Konecta sin número de teléfono?**  
 Sí. Elige "Solo usuario" en el registro para mayor anonimato.
 
 **¿Dónde se guardan mis claves criptográficas?**  
-En el Android Keystore, respaldado por hardware en dispositivos compatibles. Son inaccesibles sin tu PIN o biometría.
-
-**¿Puedo cambiar el idioma?**  
-Sí, desde **Ajustes → Apariencia → Idioma**. El cambio es inmediato.
-
-**¿Cómo activo el modo oscuro?**  
-Desde **Ajustes → Apariencia → Tema**. Elige Oscuro, Claro, o Según el sistema.
+En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o biometría.
 
 ---
 
@@ -231,7 +281,8 @@ Desde **Ajustes → Apariencia → Tema**. Elige Oscuro, Claro, o Según el sist
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **1.0.7** | jun 2026 | Biometría corregida; menú ⋮ funcional; pantalla Ajustes completa (tema/idioma/seguridad/cuenta); OTP modo demo; botón Acceder sin PIN; permisos AndroidManifest |
+| **1.0.8** | jun 2026 | **Teal Esmeralda** (paleta nueva, dark mode legible); biometría CORREGIDA; lock screen navega al home; PIN back button corregido; QR personal; búsqueda de chats; bloqueo capturas; auto-lock; foto de perfil en Ajustes |
+| 1.0.7 | jun 2026 | Permisos biometría; OTP demo; PIN spinner; menú ⋮ funcional; pantalla Ajustes; persistencia tema/idioma; Acceder sin PIN |
 | 1.0.6 | jun 2026 | APK release firmado con RSA-4096; Firebase Remote Config; popup de actualización |
 | 1.0.5 | jun 2026 | Llamadas WebRTC P2P; notas de voz; reproducción de audio |
 | 1.0.4 | jun 2026 | Base de datos SQLite; historial de mensajes; burbujas de chat |
@@ -246,32 +297,50 @@ Desde **Ajustes → Apariencia → Tema**. Elige Oscuro, Claro, o Según el sist
 
 ### What is Konecta?
 
-Konecta is a secure, private messaging app with end-to-end (E2E) encryption. Your messages, calls, and files are encrypted in transit — nobody, not even Konecta, can read them.
+Konecta is a secure, private messaging app with end-to-end (E2E) encryption. Nobody, not even Konecta, can read your messages.
 
 ### Registration
 
-**Option A — Phone number:** Enter your country code and phone number, accept terms, tap Continue. Enter any 6-digit code (demo mode).
+**Option A — Phone number:** Enter country code and phone number, accept terms, tap Continue. Enter any 6-digit code (demo mode).
 
-**Option B — Username only:** Greater privacy — no phone number required. Use only letters, numbers, dots, and underscores.
+**Option B — Username only:** Greater privacy — no phone number required.
+
+### Profile Setup
+
+Tap the avatar circle to add a profile photo from gallery or camera. Enter display name, optional bio, tap **Create account**.
 
 ### PIN Setup (optional)
 
-The PIN locks Konecta on your device. If you don't want a PIN, tap **Access without PIN** — you can always set one later from Settings.
+The **Access without PIN** button is always visible and never hidden by the keyboard. The Back button no longer exits the registration flow.
+
+### Biometrics
+
+Fixed in v1.0.8 — works correctly on all Android devices.
+
+### QR Code
+
+Tap the QR icon in the Chats bar. Shows your personal QR code for others to scan and add you. Tap your User ID to copy it.
+
+### Chat Search
+
+Tap 🔍 in the Chats bar. Real-time filtering by name or message, with highlighted matches.
 
 ### Settings
 
-Access via the **⋮ menu → Settings** on the main screen.
+- **Profile:** Edit avatar, copy User ID, access QR
+- **Theme:** Dark (Teal Esmeralda) / System / Light
+- **Language:** Español / English
+- **Screen security:** Block screenshots (on by default) — toggle in Privacy
+- **Auto-lock:** Immediately / 1min / 5min / 15min / 1h / never
+- **Sign out / Delete account**
 
-- **Theme:** Dark / System default / Light — persisted across restarts
-- **Language:** Español / English — changes instantly
-- **Change PIN:** Update your 6-digit unlock PIN
-- **Biometric:** Configure fingerprint or face recognition
-- **Sign out:** Close session without deleting your keys
-- **Delete account:** Permanently erase your account, keys, and all local data
+### Coming in v1.1.0
+
+Emoji reactions · Reply to message · Disappearing messages · Sticker packs · Chat wallpapers · Panic PIN · Edit messages · Pinned messages · Polls · Location sharing · Saved messages
 
 ### Privacy
 
-Konecta uses the full Signal Protocol (Ed25519, X25519, X3DH, Double Ratchet, AES-256-GCM). Private keys never leave your device. No data is sold or shared. No phone number required.
+Signal Protocol (Ed25519, X25519, X3DH, Double Ratchet, AES-256-GCM). Private keys never leave your device. Screenshots blocked by FLAG_SECURE. No data sold or shared. No phone number required.
 
 ---
 

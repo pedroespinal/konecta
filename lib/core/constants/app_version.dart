@@ -1,13 +1,46 @@
 // ARCHIVO GENERADO AUTOMATICAMENTE — no editar a mano
 // Actualizado por: dart run tool/bump_version.dart
 abstract final class AppVersion {
-  static const String version = '1.0.6';
-  static const int buildNumber = 8;
-  static const String fullVersion = '1.0.6+8';
-  static const String displayVersion = 'v1.0.6 (build 8)';
+  static const String version = '1.0.8';
+  static const int buildNumber = 10;
+  static const String fullVersion = '1.0.8+10';
+  static const String displayVersion = 'v1.0.8 (build 10)';
 
   // Historial de cambios — se actualiza con cada version aprobada
   static const List<VersionEntry> changelog = [
+    VersionEntry(
+      version: '1.0.8',
+      build: 10,
+      date: '2026-06-17',
+      changes: [
+        'Paleta Teal Esmeralda — identidad visual única, dark mode legible (WCAG AA/AAA)',
+        'Biometría CORREGIDA — FlutterFragmentActivity (causa raíz definitiva)',
+        'Lock screen CORREGIDA — navega al home después de PIN/huella correctos',
+        'PIN setup: botón Atrás ya no rompe el flujo de registro (PopScope)',
+        'PIN setup: Acceder sin PIN ya no se oculta bajo el teclado',
+        'Nuevo: pantalla Mi código QR — compartir ID para agregar contactos',
+        'Nuevo: búsqueda de chats en tiempo real con resaltado de coincidencias',
+        'Nuevo: bloqueo de capturas de pantalla (configurable en Ajustes)',
+        'Nuevo: bloqueo automático configurable (inmediato/1min/5min/15min/1h/nunca)',
+        'Nuevo: foto de perfil editable desde Ajustes',
+        'Ajustes: sección Privacidad con toggles de seguridad',
+        'Ajustes: acceso rápido a QR desde el perfil',
+      ],
+    ),
+    VersionEntry(
+      version: '1.0.7',
+      build: 9,
+      date: '2026-06-17',
+      changes: [
+        'Biometría: permisos AndroidManifest corregidos',
+        'OTP: acepta cualquier código de 6 dígitos (modo demo)',
+        'PIN spinner: corregido con try-catch en _savePin()',
+        'Menú 3 puntos: PopupMenuButton funcional con 4 opciones',
+        'Nueva pantalla de Ajustes completa (tema/idioma/seguridad/cuenta)',
+        'Persistencia de tema e idioma en SharedPreferences',
+        'Botón prominente Acceder sin PIN',
+      ],
+    ),
     VersionEntry(
       version: '1.0.6',
       build: 8,

@@ -8,6 +8,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/chat/providers/chat_provider.dart';
 import '../../../features/chat/screens/chat_screen.dart';
+import '../screens/chat_search_screen.dart';
 
 class ChatsTab extends ConsumerWidget {
   const ChatsTab({super.key});
@@ -25,13 +26,17 @@ class ChatsTab extends ConsumerWidget {
           title: Text(l10n.navChats),
           actions: [
             IconButton(
-              icon: const Icon(Icons.qr_code_scanner_rounded),
-              onPressed: () {},
-              tooltip: 'Escanear QR',
+              icon: const Icon(Icons.qr_code_rounded),
+              onPressed: () => context.push(AppRoutes.qr),
+              tooltip: 'Mi código QR',
             ),
             IconButton(
               icon: const Icon(Icons.search_rounded),
-              onPressed: () {},
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const ChatSearchScreen(),
+                ),
+              ),
               tooltip: l10n.search,
             ),
             PopupMenuButton<String>(
