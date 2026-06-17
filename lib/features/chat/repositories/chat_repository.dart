@@ -181,6 +181,25 @@ class ChatRepository {
   Future<void> starMessage(String messageId, bool starred) =>
       _messagesDao.toggleStar(messageId, starred);
 
+  Future<void> updateMessage(String messageId, String newText, String chatId) async {
+    final encrypted = await _MessageCipher.encrypt(newText, chatId);
+    await _messagesDao.updateMessage(messageId, encrypted);
+  }
+
+  Future<List<MessageModel>> getStarredMessages() async {
+    final starred = await _messagesDao.getStarred();
+    final decrypted = <MessageModel>[];
+    for (final msg in starred) {
+      try {
+        final plain = await _MessageCipher.decrypt(msg.encryptedContent, msg.chatId);
+        decrypted.add(msg.copyWith(decryptedContent: plain));
+      } catch (_) {
+        decrypted.add(msg.copyWith(decryptedContent: '[Mensaje cifrado]'));
+      }
+    }
+    return decrypted;
+  }
+
   Future<ChatModel> createIndividualChat(ContactModel contact) async {
     final profile = _ref.read(authProvider).profile;
     final chatId = _generateChatId(profile?.userId ?? '', contact.id);

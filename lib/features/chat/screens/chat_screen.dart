@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/database/models/chat_model.dart';
 import '../../../core/database/models/message_model.dart';
 import '../../../core/network/message_payload.dart';
@@ -25,6 +26,8 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   MessageModel? _replyingTo;
+  MessageModel? _editingMessage;
+  int _disappearsInSeconds = 0;
   StreamSubscription? _typingSubscription;
 
   @override
@@ -32,6 +35,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _listenToTyping();
+    _loadEphemeralPref();
+  }
+
+  Future<void> _loadEphemeralPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    final secs = prefs.getInt('ephemeral_${widget.chat.id}') ?? 0;
+    if (mounted) setState(() => _disappearsInSeconds = secs);
   }
 
   void _onScroll() {
@@ -66,11 +76,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _sendMessage(String text) {
-    ref.read(chatScreenProvider(widget.chat.id).notifier).sendText(
-          text,
-          replyToId: _replyingTo?.id,
-        );
-    setState(() => _replyingTo = null);
+    if (_editingMessage != null) {
+      ref
+          .read(chatScreenProvider(widget.chat.id).notifier)
+          .updateMessage(_editingMessage!.id, text);
+      setState(() => _editingMessage = null);
+    } else {
+      ref.read(chatScreenProvider(widget.chat.id).notifier).sendText(
+            text,
+            replyToId: _replyingTo?.id,
+            disappearsInSeconds: _disappearsInSeconds > 0 ? _disappearsInSeconds : null,
+          );
+      setState(() => _replyingTo = null);
+    }
     Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
   }
 
@@ -184,6 +202,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 .read(chatScreenProvider(widget.chat.id)
                                     .notifier)
                                 .reactTo(msg.id, emoji),
+                            onEdit: isMine ? () => setState(() {
+                                  _editingMessage = msg;
+                                  _replyingTo = null;
+                                }) : null,
+                            onStar: () => ref
+                                .read(chatScreenProvider(widget.chat.id)
+                                    .notifier)
+                                .starMessage(msg.id, !msg.isStarred),
                           );
                         },
                       ),
@@ -204,6 +230,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onTypingChanged: _onTypingChanged,
             replyingTo: _replyingTo,
             onCancelReply: () => setState(() => _replyingTo = null),
+            editingMessage: _editingMessage,
+            onCancelEdit: () => setState(() => _editingMessage = null),
           ),
 
           const KonectaFooter(),
@@ -302,19 +330,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
         PopupMenuButton<_ChatAction>(
           icon: const Icon(Icons.more_vert_rounded),
-          itemBuilder: (_) => const [
-            PopupMenuItem(
+          itemBuilder: (_) => [
+            const PopupMenuItem(
                 value: _ChatAction.search,
                 child: Text('Buscar en chat')),
-            PopupMenuItem(
+            const PopupMenuItem(
                 value: _ChatAction.media, child: Text('Multimedia')),
-            PopupMenuItem(
+            const PopupMenuItem(
                 value: _ChatAction.mute,
                 child: Text('Silenciar notificaciones')),
-            PopupMenuItem(
+            const PopupMenuItem(
                 value: _ChatAction.wallpaper,
                 child: Text('Fondo de pantalla')),
             PopupMenuItem(
+              value: _ChatAction.ephemeral,
+              child: Row(
+                children: [
+                  Icon(Icons.timer_rounded,
+                      size: 18,
+                      color: _disappearsInSeconds > 0
+                          ? KonectaColors.secondary
+                          : null),
+                  const SizedBox(width: 8),
+                  Text(_disappearsInSeconds > 0
+                      ? 'Efímeros: ${_ephemeralLabel()}'
+                      : 'Mensajes efímeros'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
                 value: _ChatAction.delete,
                 child: Text('Borrar conversación',
                     style: TextStyle(color: KonectaColors.error))),
@@ -329,9 +373,82 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     switch (action) {
       case _ChatAction.delete:
         _confirmDeleteChat();
+      case _ChatAction.ephemeral:
+        _showEphemeralPicker();
       default:
         _showComingSoon(context, action.name);
     }
+  }
+
+  String _ephemeralLabel() {
+    switch (_disappearsInSeconds) {
+      case 300: return '5 min';
+      case 3600: return '1 hora';
+      case 86400: return '1 día';
+      case 604800: return '7 días';
+      default: return '${_disappearsInSeconds}s';
+    }
+  }
+
+  void _showEphemeralPicker() {
+    final options = [
+      (label: 'Desactivado', seconds: 0),
+      (label: '5 minutos', seconds: 300),
+      (label: '1 hora', seconds: 3600),
+      (label: '1 día', seconds: 86400),
+      (label: '7 días', seconds: 604800),
+    ];
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setLocalState) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              Text(
+                'Mensajes efímeros',
+                style: GoogleFonts.inter(
+                    fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Los mensajes nuevos desaparecerán automáticamente',
+                style: GoogleFonts.inter(fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              ...options.map((opt) => ListTile(
+                    leading: Icon(
+                      _disappearsInSeconds == opt.seconds
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      color: KonectaColors.primary,
+                    ),
+                    title: Text(opt.label),
+                    trailing: opt.seconds == 0
+                        ? null
+                        : const Icon(Icons.timer_rounded,
+                            color: KonectaColors.secondary, size: 18),
+                    onTap: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setInt(
+                          'ephemeral_${widget.chat.id}', opt.seconds);
+                      if (mounted) {
+                        setState(() => _disappearsInSeconds = opt.seconds);
+                      }
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
+                  )),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _confirmDeleteChat() {
@@ -363,7 +480,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature — Disponible en Fase 4'),
+        content: Text('$feature — próximamente'),
         backgroundColor: KonectaColors.primary,
         duration: const Duration(seconds: 2),
       ),
@@ -371,7 +488,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 }
 
-enum _ChatAction { search, media, mute, wallpaper, delete }
+enum _ChatAction { search, media, mute, wallpaper, ephemeral, delete }
 
 class _EmptyChat extends StatelessWidget {
   final String chatName;

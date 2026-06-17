@@ -1,7 +1,7 @@
-# Guía de Usuario — Konecta v1.0.9
+# Guía de Usuario — Konecta v1.1.0
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.0.9 (build 11) — 17 de junio de 2026
+**Versión:** 1.1.0 (build 12) — 17 de junio de 2026
 
 ---
 
@@ -109,7 +109,7 @@ Toca el ícono QR en la barra superior de Chats (o en **Ajustes → Perfil → Q
 - **Ver tu QR:** muestra tu código único para que otros te agreguen
 - **Copiar ID:** toca el ID para copiarlo al portapapeles
 - **Compartir:** comparte tu QR por otros medios
-- **Escanear QR:** (disponible en v1.1.0)
+- **Escanear QR:** toca el botón "Escanear código de un contacto" para abrir la cámara
 
 El QR está vinculado a tus claves Ed25519 y solo sirve para agregar contactos.
 
@@ -233,22 +233,29 @@ Cuando haya una versión nueva disponible en GitHub:
 
 ---
 
-## Próximas funciones — v1.1.0
+## Novedades en v1.1.0
 
 | Función | Descripción |
 |---------|-------------|
-| 😀 Reacciones | Reacciona a mensajes con emoji |
-| ↩️ Responder | Responde a un mensaje específico |
-| ⏱️ Mensajes efímeros | Mensajes que desaparecen automáticamente |
+| 📷 Escáner QR | Escanea el QR de un contacto para agregarlo |
+| ⏱️ Mensajes efímeros | Mensajes que desaparecen: 5 min / 1h / 1 día / 7 días |
+| ✏️ Editar mensajes | Mantén presionado tu mensaje → Editar |
+| ⭐ Mensajes guardados | Destaca mensajes y accede desde Ajustes |
+| 💬 Estados reales | Publica estados de texto desde la pestaña Estado |
+| ↩️ Responder | Responde a mensajes específicos (operativo) |
+| 😀 Reacciones | 6 emojis rápidos por long-press en cualquier mensaje |
+
+## Próximas funciones — v1.2.0
+
+| Función | Descripción |
+|---------|-------------|
 | 🎨 Stickers | Packs de stickers animados |
 | 🖼️ Fondos de chat | Personaliza el fondo de cada conversación |
 | 🔇 PIN de pánico | PIN alternativo que muestra app vacía (exclusivo Konecta) |
-| ✏️ Editar mensajes | Edita un mensaje ya enviado |
 | 📌 Fijar mensajes | Fija mensajes importantes en el chat |
 | 📅 Mensajes programados | Programa mensajes para más tarde |
 | 📍 Ubicación | Comparte tu ubicación en tiempo real |
 | 📊 Encuestas | Crea encuestas en grupos |
-| 📁 Mensajes guardados | Nota para ti mismo |
 
 ---
 
@@ -281,7 +288,8 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **1.0.9** | jun 2026 | **Bug fixes de navegación**: botón Actualizar ahora abre GitHub; tap en Estado, Invitar amigos, Agregar amigos y Crear grupos ya funcionan; manifest Android con queries HTTPS para url_launcher |
+| **1.1.0** | jun 2026 | **Capa 1 completa**: Escáner QR funcional; mensajes efímeros configurables; editar mensajes; destacar y ver mensajes guardados; estados de texto reales; responder y reaccionar ya operativos; menú contextual mejorado |
+| 1.0.9 | jun 2026 | **Bug fixes de navegación**: botón Actualizar ahora abre GitHub; tap en Estado, Invitar amigos, Agregar amigos y Crear grupos ya funcionan; manifest Android con queries HTTPS para url_launcher |
 | 1.0.8 | jun 2026 | **Teal Esmeralda** (paleta nueva, dark mode legible); biometría CORREGIDA; lock screen navega al home; PIN back button corregido; QR personal; búsqueda de chats; bloqueo capturas; auto-lock; foto de perfil en Ajustes |
 | 1.0.7 | jun 2026 | Permisos biometría; OTP demo; PIN spinner; menú ⋮ funcional; pantalla Ajustes; persistencia tema/idioma; Acceder sin PIN |
 | 1.0.6 | jun 2026 | APK release firmado con RSA-4096; Firebase Remote Config; popup de actualización |
@@ -335,9 +343,13 @@ Tap 🔍 in the Chats bar. Real-time filtering by name or message, with highligh
 - **Auto-lock:** Immediately / 1min / 5min / 15min / 1h / never
 - **Sign out / Delete account**
 
-### Coming in v1.1.0
+### New in v1.1.0
 
-Emoji reactions · Reply to message · Disappearing messages · Sticker packs · Chat wallpapers · Panic PIN · Edit messages · Pinned messages · Polls · Location sharing · Saved messages
+QR Scanner · Disappearing messages (5 min / 1h / 1d / 7d) · Edit messages · Starred messages · Real text statuses · Reply to messages (live) · Emoji reactions (live)
+
+### Coming in v1.2.0
+
+Sticker packs · Chat wallpapers · Panic PIN · Pinned messages · Scheduled messages · Location sharing · Polls in groups
 
 ### Privacy
 

@@ -74,11 +74,12 @@ class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
     );
   }
 
-  Future<void> sendText(String text, {String? replyToId}) async {
+  Future<void> sendText(String text, {String? replyToId, int? disappearsInSeconds}) async {
     final msg = await _repo.sendTextMessage(
       chatId: chatId,
       text: text,
       replyToId: replyToId,
+      disappearsInSeconds: disappearsInSeconds,
     );
     state = state.copyWith(messages: [...state.messages, msg]);
   }
@@ -96,6 +97,26 @@ class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
       messages: state.messages.map((m) {
         if (m.id != messageId) return m;
         return m.copyWith(reactionEmoji: emoji);
+      }).toList(),
+    );
+  }
+
+  Future<void> updateMessage(String messageId, String newText) async {
+    await _repo.updateMessage(messageId, newText, chatId);
+    state = state.copyWith(
+      messages: state.messages.map((m) {
+        if (m.id != messageId) return m;
+        return m.copyWith(decryptedContent: newText);
+      }).toList(),
+    );
+  }
+
+  Future<void> starMessage(String messageId, bool starred) async {
+    await _repo.starMessage(messageId, starred);
+    state = state.copyWith(
+      messages: state.messages.map((m) {
+        if (m.id != messageId) return m;
+        return m.copyWith(isStarred: starred);
       }).toList(),
     );
   }

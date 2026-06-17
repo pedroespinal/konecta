@@ -13,6 +13,8 @@ class ChatInputBar extends StatefulWidget {
   final ValueChanged<bool>? onTypingChanged;
   final MessageModel? replyingTo;
   final VoidCallback? onCancelReply;
+  final MessageModel? editingMessage;
+  final VoidCallback? onCancelEdit;
 
   const ChatInputBar({
     super.key,
@@ -23,6 +25,8 @@ class ChatInputBar extends StatefulWidget {
     this.onTypingChanged,
     this.replyingTo,
     this.onCancelReply,
+    this.editingMessage,
+    this.onCancelEdit,
   });
 
   @override
@@ -38,6 +42,21 @@ class _ChatInputBarState extends State<ChatInputBar> {
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void didUpdateWidget(ChatInputBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.editingMessage != null &&
+        widget.editingMessage != oldWidget.editingMessage) {
+      _controller.text = widget.editingMessage!.decryptedContent ?? '';
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: _controller.text.length),
+      );
+      _focus.requestFocus();
+    } else if (widget.editingMessage == null && oldWidget.editingMessage != null) {
+      _controller.clear();
+    }
   }
 
   void _onTextChanged() {
@@ -70,8 +89,15 @@ class _ChatInputBarState extends State<ChatInputBar> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Banner de edición (tiene prioridad sobre reply)
+        if (widget.editingMessage != null)
+          _EditBanner(
+            message: widget.editingMessage!,
+            onCancel: widget.onCancelEdit,
+            isDark: isDark,
+          )
         // Banner de respuesta
-        if (widget.replyingTo != null)
+        else if (widget.replyingTo != null)
           _ReplyBanner(
             message: widget.replyingTo!,
             onCancel: widget.onCancelReply,
@@ -237,6 +263,73 @@ class _SendButton extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+      ),
+    );
+  }
+}
+
+class _EditBanner extends StatelessWidget {
+  final MessageModel message;
+  final VoidCallback? onCancel;
+  final bool isDark;
+  const _EditBanner({
+    required this.message,
+    required this.isDark,
+    this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: isDark ? KonectaColors.darkSurface2 : KonectaColors.lightSurface,
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 36,
+            decoration: BoxDecoration(
+              color: KonectaColors.secondary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Icon(Icons.edit_rounded, size: 16, color: KonectaColors.secondary),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Editando mensaje',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: KonectaColors.secondary,
+                  ),
+                ),
+                Text(
+                  message.decryptedContent ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: isDark
+                        ? KonectaColors.darkTextSecondary
+                        : KonectaColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded, size: 18),
+            onPressed: onCancel,
+            color: isDark
+                ? KonectaColors.darkTextSecondary
+                : KonectaColors.lightTextSecondary,
+          ),
+        ],
       ),
     );
   }

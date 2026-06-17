@@ -11,6 +11,7 @@ import '../../features/calls/screens/call_screen.dart';
 import '../../features/chat/screens/chat_screen.dart';
 import '../../features/chat/screens/new_chat_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/chat/screens/starred_messages_screen.dart';
 import '../../features/qr/qr_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/splash/splash_screen.dart';
@@ -32,6 +33,7 @@ abstract final class AppRoutes {
   static const String settings = '/settings';
   static const String about = '/settings/about';
   static const String qr = '/qr';
+  static const String starredMessages = '/starred-messages';
 }
 
 final appRouter = GoRouter(
@@ -114,6 +116,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.qr,
       builder: (context, state) => const QrScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.starredMessages,
+      builder: (context, state) => const StarredMessagesScreen(),
     ),
   ],
 );

@@ -65,6 +65,16 @@ class MessagesDao {
         where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<void> updateMessage(String id, String newEncryptedContent) async {
+    final db = await _db.database;
+    await db.update(
+      'messages',
+      {'encrypted_content': newEncryptedContent},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<void> setReaction(String id, String? emoji) async {
     final db = await _db.database;
     await db.update('messages', {'reaction_emoji': emoji},

@@ -1,13 +1,42 @@
 // ARCHIVO GENERADO AUTOMATICAMENTE — no editar a mano
 // Actualizado por: dart run tool/bump_version.dart
 abstract final class AppVersion {
-  static const String version = '1.0.9';
-  static const int buildNumber = 11;
-  static const String fullVersion = '1.0.9+11';
-  static const String displayVersion = 'v1.0.9 (build 11)';
+  static const String version = '1.1.0';
+  static const int buildNumber = 12;
+  static const String fullVersion = '1.1.0+12';
+  static const String displayVersion = 'v1.1.0 (build 12)';
 
   // Historial de cambios — se actualiza con cada version aprobada
   static const List<VersionEntry> changelog = [
+    VersionEntry(
+      version: '1.1.0',
+      build: 12,
+      date: '2026-06-17',
+      changes: [
+        'Escáner QR funcional con linterna y animación de escaneo',
+        'Mensajes efímeros: 5 min / 1 hora / 1 día / 7 días por chat',
+        'Editar mensajes propios (mantener presionado → Editar)',
+        'Destacar mensajes (guardarlos) y ver en Ajustes → Mensajes guardados',
+        'Estados de texto reales con SharedPreferences — publicar y eliminar',
+        'Responder a mensajes: ya operativo en conversaciones',
+        'Reacciones emoji: ya operativas en conversaciones',
+        'Menú contextual mejorado: destacar togglable, editar, eliminar',
+        'Corregido: "Disponible en Fase 4" reemplazado por "próximamente"',
+      ],
+    ),
+    VersionEntry(
+      version: '1.0.9',
+      build: 11,
+      date: '2026-06-17',
+      changes: [
+        'Manifest Android: queries HTTPS/HTTP para url_launcher',
+        'Update dialog: botón Actualizar abre GitHub releases correctamente',
+        'Estado (StoriesTab): tap en Agregar estado responde',
+        'Invitar amigos: copia enlace de descarga al portapapeles',
+        'Agregar amigos: muestra SnackBar informativo',
+        'Crear grupos: navega directo a NewChatScreen tab Nuevo grupo',
+      ],
+    ),
     VersionEntry(
       version: '1.0.8',
       build: 10,

@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/konecta_footer.dart';
 import '../auth/repositories/auth_repository.dart';
+import 'qr_scanner_screen.dart';
 
 class QrScreen extends ConsumerWidget {
   const QrScreen({super.key});
@@ -190,21 +191,14 @@ class QrScreen extends ConsumerWidget {
 
                     const SizedBox(height: 16),
 
-                    // Scanner placeholder
+                    // Botón escáner QR
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                'Escáner QR — disponible en v1.1.0',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              duration: const Duration(seconds: 2),
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const QrScannerScreen(),
                             ),
                           );
                         },
@@ -212,7 +206,7 @@ class QrScreen extends ConsumerWidget {
                         label: const Text('Escanear código de un contacto'),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: KonectaColors.primary),
+                          side: const BorderSide(color: KonectaColors.primary),
                           foregroundColor: KonectaColors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),

@@ -7,11 +7,13 @@ import '../../../core/theme/app_colors.dart';
 class MessageBubble extends StatelessWidget {
   final MessageModel message;
   final bool isMine;
-  final bool showSender;   // para grupos
+  final bool showSender;
   final String? senderName;
   final VoidCallback? onReply;
   final VoidCallback? onDelete;
   final ValueChanged<String?>? onReact;
+  final VoidCallback? onEdit;
+  final VoidCallback? onStar;
   final MessageModel? replyTo;
 
   const MessageBubble({
@@ -23,6 +25,8 @@ class MessageBubble extends StatelessWidget {
     this.onReply,
     this.onDelete,
     this.onReact,
+    this.onEdit,
+    this.onStar,
     this.replyTo,
   });
 
@@ -107,11 +111,19 @@ class MessageBubble extends StatelessWidget {
                               isDark: isDark,
                             ),
 
-                          // Hora + estado
+                          // Hora + efímero + estado
                           const SizedBox(height: 3),
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              if (message.disappearsAt != null) ...[
+                                Icon(
+                                  Icons.timer_rounded,
+                                  size: 11,
+                                  color: isMine ? Colors.white60 : KonectaColors.secondary,
+                                ),
+                                const SizedBox(width: 2),
+                              ],
                               Text(
                                 _formatTime(message.sentAt),
                                 style: GoogleFonts.inter(
@@ -176,6 +188,8 @@ class MessageBubble extends StatelessWidget {
         onReply: onReply,
         onDelete: onDelete,
         onReact: onReact,
+        onEdit: onEdit,
+        onStar: onStar,
         onCopy: () {
           final text = message.decryptedContent ?? '';
           Clipboard.setData(ClipboardData(text: text));
@@ -435,6 +449,8 @@ class _MessageContextMenu extends StatelessWidget {
   final VoidCallback? onReply;
   final VoidCallback? onDelete;
   final VoidCallback? onCopy;
+  final VoidCallback? onEdit;
+  final VoidCallback? onStar;
   final ValueChanged<String?>? onReact;
 
   const _MessageContextMenu({
@@ -443,6 +459,8 @@ class _MessageContextMenu extends StatelessWidget {
     this.onReply,
     this.onDelete,
     this.onCopy,
+    this.onEdit,
+    this.onStar,
     this.onReact,
   });
 
@@ -503,10 +521,19 @@ class _MessageContextMenu extends StatelessWidget {
                 onTap: () { Navigator.pop(context); onCopy?.call(); },
               ),
             ListTile(
-              leading: const Icon(Icons.star_rounded),
-              title: const Text('Destacar'),
-              onTap: () { Navigator.pop(context); },
+              leading: Icon(
+                message.isStarred ? Icons.star_rounded : Icons.star_outline_rounded,
+                color: message.isStarred ? KonectaColors.warning : null,
+              ),
+              title: Text(message.isStarred ? 'Quitar guardado' : 'Destacar'),
+              onTap: () { Navigator.pop(context); onStar?.call(); },
             ),
+            if (isMine && !message.isDeleted && message.type == MessageType.text)
+              ListTile(
+                leading: const Icon(Icons.edit_rounded),
+                title: const Text('Editar'),
+                onTap: () { Navigator.pop(context); onEdit?.call(); },
+              ),
             if (isMine && !message.isDeleted)
               ListTile(
                 leading: const Icon(Icons.delete_rounded,

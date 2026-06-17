@@ -2,7 +2,7 @@ name: konecta
 description: "Konecta - Mensajeria segura y privada"
 publish_to: 'none'
 
-version: 1.0.9+11
+version: 1.1.0+12
 
 environment:
   sdk: ^3.11.5
@@ -66,6 +66,9 @@ dependencies:
 
   # QR code
   qr_flutter: ^4.1.0
+
+  # Escáner QR
+  mobile_scanner: ^6.0.0
 
 dependency_overrides:
   # record_linux 0.7.2 no implementa record_platform_interface >=1.6.0

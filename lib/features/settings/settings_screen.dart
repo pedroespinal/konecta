@@ -649,9 +649,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _SettingsTile(
                   icon: Icons.star_rounded,
                   iconColor: KonectaColors.warning,
-                  title: 'Próximas funciones — v1.1.0',
-                  subtitle:
-                      'Reacciones · Responder · Mensajes efímeros · Stickers',
+                  title: 'Mensajes guardados',
+                  subtitle: 'Mensajes que destacaste con ★',
+                  onTap: () => context.push(AppRoutes.starredMessages),
                 ),
               ],
             ),
