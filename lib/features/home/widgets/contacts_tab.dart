@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -15,7 +16,17 @@ class ContactsTab extends StatelessWidget {
           snap: true,
           title: Text(l10n.navContacts),
           actions: [
-            IconButton(icon: const Icon(Icons.person_add_rounded), onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.person_add_rounded),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Agregar contacto por teléfono o QR — próximamente'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+            ),
             IconButton(icon: const Icon(Icons.search_rounded), onPressed: () {}),
           ],
         ),
@@ -49,7 +60,18 @@ class _InviteTile extends StatelessWidget {
       ),
       title: const Text('Invitar amigos a Konecta'),
       subtitle: const Text('Comparte el enlace de descarga'),
-      onTap: () {},
+      onTap: () async {
+        const link = 'https://github.com/pedroespinal/konecta/releases/latest';
+        await Clipboard.setData(const ClipboardData(text: link));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('¡Enlace copiado! Compártelo con tus amigos'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      },
     );
   }
 }

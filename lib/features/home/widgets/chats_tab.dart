@@ -8,6 +8,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/chat/providers/chat_provider.dart';
 import '../../../features/chat/screens/chat_screen.dart';
+import '../../../features/chat/screens/new_chat_screen.dart';
 import '../screens/chat_search_screen.dart';
 
 class ChatsTab extends ConsumerWidget {
@@ -47,10 +48,9 @@ class ChatsTab extends ConsumerWidget {
               onSelected: (value) {
                 switch (value) {
                   case 'new_group':
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Grupos: próximamente'),
-                        duration: Duration(seconds: 2),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NewChatScreen(initialTabIndex: 1),
                       ),
                     );
                   case 'archived':

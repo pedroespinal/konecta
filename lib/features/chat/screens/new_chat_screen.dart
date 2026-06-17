@@ -8,7 +8,8 @@ import '../repositories/chat_repository.dart';
 import 'chat_screen.dart';
 
 class NewChatScreen extends ConsumerStatefulWidget {
-  const NewChatScreen({super.key});
+  final int initialTabIndex;
+  const NewChatScreen({super.key, this.initialTabIndex = 0});
 
   @override
   ConsumerState<NewChatScreen> createState() => _NewChatScreenState();
@@ -33,7 +34,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this);
+    _tabCtrl = TabController(length: 2, vsync: this, initialIndex: widget.initialTabIndex);
     _searchCtrl.addListener(() => setState(() => _query = _searchCtrl.text));
   }
 

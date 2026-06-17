@@ -43,8 +43,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final accepted = await UpdateDialog.show(context, info);
     if (accepted && info.updateUrl.isNotEmpty) {
       final uri = Uri.tryParse(info.updateUrl);
-      if (uri != null && await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (uri != null) {
+        try {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Descarga en: ${info.updateUrl}')),
+            );
+          }
+        }
       }
     }
   }

@@ -1,7 +1,7 @@
-# Guía de Usuario — Konecta v1.0.8
+# Guía de Usuario — Konecta v1.0.9
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.0.8 (build 10) — 17 de junio de 2026
+**Versión:** 1.0.9 (build 11) — 17 de junio de 2026
 
 ---
 
@@ -281,7 +281,8 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **1.0.8** | jun 2026 | **Teal Esmeralda** (paleta nueva, dark mode legible); biometría CORREGIDA; lock screen navega al home; PIN back button corregido; QR personal; búsqueda de chats; bloqueo capturas; auto-lock; foto de perfil en Ajustes |
+| **1.0.9** | jun 2026 | **Bug fixes de navegación**: botón Actualizar ahora abre GitHub; tap en Estado, Invitar amigos, Agregar amigos y Crear grupos ya funcionan; manifest Android con queries HTTPS para url_launcher |
+| 1.0.8 | jun 2026 | **Teal Esmeralda** (paleta nueva, dark mode legible); biometría CORREGIDA; lock screen navega al home; PIN back button corregido; QR personal; búsqueda de chats; bloqueo capturas; auto-lock; foto de perfil en Ajustes |
 | 1.0.7 | jun 2026 | Permisos biometría; OTP demo; PIN spinner; menú ⋮ funcional; pantalla Ajustes; persistencia tema/idioma; Acceder sin PIN |
 | 1.0.6 | jun 2026 | APK release firmado con RSA-4096; Firebase Remote Config; popup de actualización |
 | 1.0.5 | jun 2026 | Llamadas WebRTC P2P; notas de voz; reproducción de audio |

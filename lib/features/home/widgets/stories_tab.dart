@@ -69,7 +69,14 @@ class _MyStoryTile extends StatelessWidget {
       ),
       title: const Text('Agregar estado'),
       subtitle: const Text('Toca para agregar'),
-      onTap: () {},
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Estados de texto, foto y video — próximamente'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
     );
   }
 }
@@ -106,7 +113,14 @@ class _StoryListItem extends StatelessWidget {
       ),
       title: Text(_names[index]),
       subtitle: Text(_times[index]),
-      onTap: () {},
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ver estado de ${_names[index]} — próximamente'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
     );
   }
 }

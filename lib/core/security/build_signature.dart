@@ -5,16 +5,16 @@
 
 abstract final class BuildSignature {
   // Payload firmado (visible, pero la firma lo hace inalterable)
-  static const String signedPayload = '{"app":"Konecta","author":"Pedro Espinal","created":"2026-06-17T12:15:08.421957Z","version":"1.0.8+10","copyright":"Todos los derechos reservados 2026"}';
+  static const String signedPayload = '{"app":"Konecta","author":"Pedro Espinal","created":"2026-06-17T12:37:27.730256Z","version":"1.0.9+11","copyright":"Todos los derechos reservados 2026"}';
 
   // Firma Ed25519 — invalida si el payload es modificado
-  static const String signature = 'd9e34fbb3ca6df03a422572db57af64ff25baaa077e97ff0ed3f586d2b886603af8346ec057fdf403cd2de4d91942b4bd5a31a03593734afbf38727b970abe00';
+  static const String signature = 'a69a2190796151652a513bb299e53bfeeea7458933cdedee262501fd8f8d17e2085b935f08ed44a5480704f04cb927aaeff0cc2fd1ffa0c0d8e0fbd73369030c';
 
   // Clave publica para verificacion (no es secreta)
   static const String publicKey = '0381c8a42a938dfa26b7b02698c795e6bb587b4e7dab449ed22a8d1f6c164841';
 
   // Metadatos rapidos (derivados del payload, para lectura interna)
-  static const String buildTimestamp = '2026-06-17T12:15:08.421957Z';
-  static const String buildVersion = '1.0.8+10';
+  static const String buildTimestamp = '2026-06-17T12:37:27.730256Z';
+  static const String buildVersion = '1.0.9+11';
   static const String buildAuthor = 'Pedro Espinal';
 }
