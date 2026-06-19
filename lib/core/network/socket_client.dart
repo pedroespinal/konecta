@@ -22,6 +22,9 @@ class KonectaSocketClient extends StateNotifier<SocketState> {
   Timer? _pingTimer;
   Timer? _reconnectTimer;
   int _reconnectDelay = 2;
+  String? _userId;
+  String? _authToken;
+  String? _fcmToken;
 
   final _messageController = StreamController<MessagePayload>.broadcast();
   final _presenceController = StreamController<PresencePayload>.broadcast();
@@ -35,17 +38,23 @@ class KonectaSocketClient extends StateNotifier<SocketState> {
 
   KonectaSocketClient() : super(const SocketState());
 
-  Future<void> connect(String userId, String authToken) async {
+  Future<void> connect(String userId, String authToken,
+      {String? fcmToken}) async {
     if (state.status == SocketStatus.connected ||
         state.status == SocketStatus.connecting) {
       return;
     }
 
+    _userId = userId;
+    _authToken = authToken;
+    _fcmToken = fcmToken;
     state = const SocketState(status: SocketStatus.connecting);
 
     try {
+      final fcmParam =
+          fcmToken != null ? '&fcmToken=${Uri.encodeComponent(fcmToken)}' : '';
       _channel = WebSocketChannel.connect(
-        Uri.parse('$_relayUrl?userId=$userId&token=$authToken'),
+        Uri.parse('$_relayUrl?userId=$userId&token=$authToken$fcmParam'),
       );
 
       await _channel!.ready;
@@ -128,7 +137,7 @@ class KonectaSocketClient extends StateNotifier<SocketState> {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(seconds: _reconnectDelay), () {
       _reconnectDelay = (_reconnectDelay * 2).clamp(2, 60);
-      connect(userId, token);
+      connect(_userId ?? userId, _authToken ?? token, fcmToken: _fcmToken);
     });
   }
 

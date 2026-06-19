@@ -3,8 +3,10 @@ package relay
 import (
 	"encoding/json"
 	"log"
+	"strconv"
 	"sync"
 
+	"github.com/pedroespinal/konecta-relay/fcm"
 	"github.com/pedroespinal/konecta-relay/models"
 )
 
@@ -18,7 +20,8 @@ type routeMsg struct {
 // Nunca almacena mensajes ni descifra ciphertext — solo reenvía.
 type Hub struct {
 	mu         sync.RWMutex
-	clients    map[string]*Client // userID -> Client
+	clients    map[string]*Client // userID -> Client activo
+	fcmTokens  map[string]string  // userID -> FCM token (persiste tras desconexión)
 	register   chan *Client
 	unregister chan *Client
 	route      chan routeMsg
@@ -27,6 +30,7 @@ type Hub struct {
 func NewHub() *Hub {
 	return &Hub{
 		clients:    make(map[string]*Client),
+		fcmTokens:  make(map[string]string),
 		register:   make(chan *Client, 64),
 		unregister: make(chan *Client, 64),
 		route:      make(chan routeMsg, 1024),
@@ -39,6 +43,9 @@ func (h *Hub) Run() {
 		case c := <-h.register:
 			h.mu.Lock()
 			h.clients[c.userID] = c
+			if c.fcmToken != "" {
+				h.fcmTokens[c.userID] = c.fcmToken
+			}
 			h.mu.Unlock()
 			log.Printf("connected: %s  total=%d", c.userID, h.clientCount())
 			h.broadcastPresence(c.userID, true)
@@ -56,7 +63,9 @@ func (h *Hub) Run() {
 		case msg := <-h.route:
 			h.mu.RLock()
 			dest, ok := h.clients[msg.to]
+			fcmToken := h.fcmTokens[msg.to]
 			h.mu.RUnlock()
+
 			if ok {
 				select {
 				case dest.send <- msg.data:
@@ -70,13 +79,38 @@ func (h *Hub) Run() {
 					default:
 					}
 				default:
-					// Buffer lleno — cliente lento
 					log.Printf("buffer lleno para %s", msg.to)
 				}
+			} else {
+				// Destinatario offline — enviar FCM push si hay token
+				h.pushOfflineMessage(fcmToken, msg.data)
 			}
-			// Si el destino no esta conectado: el cliente reintentara via FCM (Fase 4)
 		}
 	}
+}
+
+// pushOfflineMessage envía un FCM push cuando el destinatario no está conectado.
+// Solo actúa para mensajes de texto (PayloadMessage).
+func (h *Hub) pushOfflineMessage(fcmToken string, data []byte) {
+	if fcmToken == "" {
+		return
+	}
+	var env models.Envelope
+	if err := json.Unmarshal(data, &env); err != nil {
+		return
+	}
+	if env.Type != models.PayloadMessage {
+		return
+	}
+	pushData := map[string]string{
+		"type":       strconv.Itoa(int(models.PayloadMessage)),
+		"chatId":     env.ChatID,
+		"from":       env.From,
+		"ciphertext": env.Ciphertext,
+		"messageId":  env.MessageID,
+		"timestamp":  strconv.FormatInt(env.Timestamp, 10),
+	}
+	go fcm.Send(fcmToken, "Konecta", "Tienes un mensaje nuevo", pushData)
 }
 
 func (h *Hub) clientCount() int {

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/webrtc/call_state.dart';
 import '../../../core/webrtc/webrtc_service.dart';
+import '../../../features/auth/repositories/auth_repository.dart';
 
 class CallScreen extends ConsumerStatefulWidget {
   final String peerId;
@@ -51,7 +52,17 @@ class _CallScreenState extends ConsumerState<CallScreen>
   Future<void> _initRenderers() async {
     await _localRenderer.initialize();
     await _remoteRenderer.initialize();
-    if (mounted) setState(() => _renderersReady = true);
+    if (!mounted) return;
+    setState(() => _renderersReady = true);
+    if (widget.isOutgoing) {
+      final myUserId = ref.read(authProvider).profile?.userId ?? '';
+      await ref.read(webRTCProvider.notifier).startCall(
+            peerId: widget.peerId,
+            peerName: widget.peerName,
+            isVideo: widget.isVideo,
+            myUserId: myUserId,
+          );
+    }
   }
 
   @override
@@ -200,7 +211,9 @@ class _CallScreenState extends ConsumerState<CallScreen>
               onFlip: () =>
                   ref.read(webRTCProvider.notifier).switchCamera(),
               onHangup: () {
-                ref.read(webRTCProvider.notifier).endCall(myId: 'me');
+                final myId =
+                    ref.read(authProvider).profile?.userId ?? '';
+                ref.read(webRTCProvider.notifier).endCall(myId: myId);
                 Navigator.of(context).pop();
               },
             ),

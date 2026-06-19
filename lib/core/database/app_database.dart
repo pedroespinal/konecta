@@ -16,7 +16,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -46,6 +46,7 @@ class AppDatabase {
         name TEXT NOT NULL,
         avatar_path TEXT,
         last_message_id TEXT,
+        last_message_preview TEXT,
         last_message_at INTEGER,
         unread_count INTEGER DEFAULT 0,
         is_muted INTEGER DEFAULT 0,
@@ -88,7 +89,10 @@ class AppDatabase {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Migraciones futuras aqui
+    if (oldVersion < 2) {
+      await db.execute(
+          'ALTER TABLE chats ADD COLUMN last_message_preview TEXT');
+    }
   }
 
   Future<void> close() async {

@@ -17,7 +17,9 @@ class QrScreen extends ConsumerWidget {
     final userId = profile?.userId ?? 'konecta-user';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final qrData = 'konecta://add/$userId';
+    final displayName = profile?.displayName ?? 'Konecta User';
+    final qrData =
+        'konecta://add/$userId?name=${Uri.encodeComponent(displayName)}';
 
     return Scaffold(
       appBar: AppBar(

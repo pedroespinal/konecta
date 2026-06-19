@@ -39,6 +39,7 @@ class ChatsDao {
       'chats',
       {
         'last_message_id': messageId,
+        'last_message_preview': preview,
         'last_message_at': sentAt.millisecondsSinceEpoch,
       },
       where: 'id = ?',

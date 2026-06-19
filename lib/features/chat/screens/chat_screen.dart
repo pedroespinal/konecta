@@ -2,11 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/database/models/chat_model.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/database/models/message_model.dart';
 import '../../../core/network/message_payload.dart';
 import '../../../core/network/socket_client.dart';
+import '../../../features/auth/repositories/auth_repository.dart';
 import '../../../features/media/media_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/konecta_footer.dart';
@@ -105,10 +108,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   void _onTypingChanged(bool isTyping) {
+    final myUserId = ref.read(authProvider).profile?.userId ?? '';
     final socket = ref.read(socketProvider.notifier);
     socket.sendTyping(
       TypingPayload(
-        from: 'me',
+        from: myUserId,
         chatId: widget.chat.id,
         isTyping: isTyping,
       ),
@@ -126,6 +130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(chatScreenProvider(widget.chat.id));
+    final myUserId = ref.watch(authProvider).profile?.userId ?? '';
 
     return Scaffold(
       backgroundColor:
@@ -173,8 +178,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           final reversed =
                               state.messages.reversed.toList();
                           final msg = reversed[index];
-                          final isMine =
-                              msg.senderId == 'me'; // TODO: usar userId real
+                          final isMine = msg.senderId == myUserId;
 
                           // Buscar el mensaje al que responde
                           MessageModel? replyMsg;
@@ -321,12 +325,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         IconButton(
           icon: const Icon(Icons.videocam_rounded),
           tooltip: 'Videollamada',
-          onPressed: () => _showComingSoon(context, 'Videollamada'),
+          onPressed: () => context.push(AppRoutes.call, extra: {
+            'peerId': widget.chat.id,
+            'peerName': widget.chat.name,
+            'isVideo': true,
+            'isOutgoing': true,
+          }),
         ),
         IconButton(
           icon: const Icon(Icons.call_rounded),
           tooltip: 'Llamada',
-          onPressed: () => _showComingSoon(context, 'Llamada'),
+          onPressed: () => context.push(AppRoutes.call, extra: {
+            'peerId': widget.chat.id,
+            'peerName': widget.chat.name,
+            'isVideo': false,
+            'isOutgoing': true,
+          }),
         ),
         PopupMenuButton<_ChatAction>(
           icon: const Icon(Icons.more_vert_rounded),
@@ -465,9 +479,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-              // TODO: llamar deleteChat desde el repository
+              final notifier =
+                  ref.read(chatScreenProvider(widget.chat.id).notifier);
+              // Eliminar y refrescar lista cuando termine (sin await para evitar
+              // uso de context tras gap async)
+              notifier.deleteChat().then((_) {
+                if (mounted) ref.invalidate(chatsProvider);
+              });
+              Navigator.pop(context); // cierra el dialog
+              Navigator.pop(context); // vuelve a la lista
             },
             child: const Text('Borrar',
                 style: TextStyle(color: KonectaColors.error)),

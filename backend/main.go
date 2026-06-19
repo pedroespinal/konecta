@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/pedroespinal/konecta-relay/fcm"
 	"github.com/pedroespinal/konecta-relay/relay"
 )
 
@@ -13,6 +14,9 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
+
+	// Inicializar FCM (sin-op si FIREBASE_SERVICE_ACCOUNT no está configurado)
+	fcm.Init()
 
 	hub := relay.NewHub()
 	go hub.Run()

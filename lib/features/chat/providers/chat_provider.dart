@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/database/daos/contacts_dao.dart';
 import '../../../core/database/models/chat_model.dart';
 import '../../../core/database/models/message_model.dart';
 import '../repositories/chat_repository.dart';
@@ -6,6 +7,11 @@ import '../repositories/chat_repository.dart';
 // Lista de todos los chats
 final chatsProvider = FutureProvider<List<ChatModel>>((ref) {
   return ref.watch(chatRepositoryProvider).loadChats();
+});
+
+// Lista de contactos desde la DB local
+final contactsProvider = FutureProvider<List<ContactModel>>((ref) {
+  return ContactsDao().getAll();
 });
 
 // Mensajes de un chat especifico
@@ -120,6 +126,8 @@ class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
       }).toList(),
     );
   }
+
+  Future<void> deleteChat() => _repo.deleteChat(chatId);
 
   void setTyping(String? userId) {
     state = userId != null

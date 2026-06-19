@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/database/models/chat_model.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/konecta_footer.dart';
+import '../../qr/qr_scanner_screen.dart';
+import '../providers/chat_provider.dart';
 import '../repositories/chat_repository.dart';
 import 'chat_screen.dart';
 
@@ -21,20 +25,11 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
   String _query = '';
   late final TabController _tabCtrl;
 
-  static final _epoch = DateTime.fromMillisecondsSinceEpoch(0);
-  // Contactos demo — en Fase 5 vendrán de la DB y del servidor
-  static final _demoContacts = [
-    ContactModel(id: 'user_alice', displayName: 'Alice Torres', phone: '+1 555 1001', identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_bob',   displayName: 'Bob Ramírez',  phone: '+1 555 1002', identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_carol', displayName: 'Carol López',  phone: '+1 555 1003', identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_diana', displayName: 'Diana Pérez',  phone: '+1 555 1004', identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_evan',  displayName: 'Evan Morales', phone: '+1 555 1005', identityPublicKeyHex: '', addedAt: _epoch),
-  ];
-
   @override
   void initState() {
     super.initState();
-    _tabCtrl = TabController(length: 2, vsync: this, initialIndex: widget.initialTabIndex);
+    _tabCtrl = TabController(
+        length: 2, vsync: this, initialIndex: widget.initialTabIndex);
     _searchCtrl.addListener(() => setState(() => _query = _searchCtrl.text));
   }
 
@@ -45,9 +40,9 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
     super.dispose();
   }
 
-  List<ContactModel> get _filtered => _query.isEmpty
-      ? _demoContacts
-      : _demoContacts
+  List<ContactModel> _filter(List<ContactModel> all) => _query.isEmpty
+      ? all
+      : all
           .where((c) =>
               c.displayName.toLowerCase().contains(_query.toLowerCase()) ||
               (c.phone?.contains(_query) ?? false))
@@ -56,6 +51,7 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
   Future<void> _openIndividualChat(ContactModel contact) async {
     final repo = ref.read(chatRepositoryProvider);
     final chat = await repo.createIndividualChat(contact);
+    ref.invalidate(chatsProvider);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => ChatScreen(chat: chat)),
@@ -71,6 +67,8 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final contactsAsync = ref.watch(contactsProvider);
+
     return Scaffold(
       backgroundColor:
           isDark ? KonectaColors.darkBackground : KonectaColors.lightBackground,
@@ -97,13 +95,12 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
       ),
       body: Column(
         children: [
-          // Barra de búsqueda
           Padding(
             padding: const EdgeInsets.all(12),
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'Buscar contacto o número…',
+                hintText: 'Buscar contacto…',
                 hintStyle: GoogleFonts.inter(fontSize: 14),
                 prefixIcon: const Icon(Icons.search_rounded),
                 border: OutlineInputBorder(
@@ -114,33 +111,44 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
                 fillColor: isDark
                     ? KonectaColors.darkSurface2
                     : KonectaColors.lightSurface,
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 0),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
               ),
             ),
           ),
-
           Expanded(
-            child: TabBarView(
-              controller: _tabCtrl,
-              children: [
-                // Tab 1: contactos
-                _ContactsList(
-                  contacts: _filtered,
-                  onTap: _openIndividualChat,
-                  isDark: isDark,
-                ),
-
-                // Tab 2: nuevo grupo
-                _NewGroupTab(
-                  contacts: _filtered,
-                  onCreate: _openNewGroup,
-                  isDark: isDark,
-                ),
-              ],
+            child: contactsAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: KonectaColors.primary),
+              ),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (contacts) {
+                final filtered = _filter(contacts);
+                return TabBarView(
+                  controller: _tabCtrl,
+                  children: [
+                    _ContactsList(
+                      contacts: filtered,
+                      onTap: _openIndividualChat,
+                      onCall: (c, isVideo) => context.push(AppRoutes.call,
+                          extra: {
+                            'peerId': c.id,
+                            'peerName': c.displayName,
+                            'isVideo': isVideo,
+                            'isOutgoing': true,
+                          }),
+                      isDark: isDark,
+                    ),
+                    _NewGroupTab(
+                      contacts: filtered,
+                      onCreate: _openNewGroup,
+                      isDark: isDark,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
-
           const KonectaFooter(),
         ],
       ),
@@ -151,10 +159,13 @@ class _NewChatScreenState extends ConsumerState<NewChatScreen>
 class _ContactsList extends StatelessWidget {
   final List<ContactModel> contacts;
   final ValueChanged<ContactModel> onTap;
+  final void Function(ContactModel, bool isVideo) onCall;
   final bool isDark;
+
   const _ContactsList({
     required this.contacts,
     required this.onTap,
+    required this.onCall,
     required this.isDark,
   });
 
@@ -162,16 +173,50 @@ class _ContactsList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (contacts.isEmpty) {
       return Center(
-        child: Text(
-          'No se encontraron contactos',
-          style: GoogleFonts.inter(
-            color: isDark
-                ? KonectaColors.darkTextSecondary
-                : KonectaColors.lightTextSecondary,
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.qr_code_rounded,
+                size: 56,
+                color: KonectaColors.primary.withValues(alpha: 0.3)),
+            const SizedBox(height: 12),
+            Text(
+              'Sin contactos',
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: isDark
+                    ? KonectaColors.darkTextSecondary
+                    : KonectaColors.lightTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Agrega amigos escaneando su código QR',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: isDark
+                    ? KonectaColors.darkTextSecondary
+                    : KonectaColors.lightTextSecondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+              ),
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              label: const Text('Escanear QR'),
+              style: FilledButton.styleFrom(
+                backgroundColor: KonectaColors.primary,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
         ),
       );
     }
+
     return ListView.builder(
       itemCount: contacts.length,
       itemBuilder: (_, i) {
@@ -190,7 +235,7 @@ class _ContactsList extends StatelessWidget {
             style: GoogleFonts.inter(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
-            c.phone ?? '',
+            c.phone ?? c.id,
             style: GoogleFonts.inter(fontSize: 12),
           ),
           trailing: Row(
@@ -199,16 +244,12 @@ class _ContactsList extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.call_rounded, size: 20),
                 color: KonectaColors.accent,
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Llamadas disponibles en Fase 4')),
-                ),
+                onPressed: () => onCall(c, false),
               ),
               IconButton(
                 icon: const Icon(Icons.videocam_rounded, size: 20),
                 color: KonectaColors.secondary,
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Video disponible en Fase 4')),
-                ),
+                onPressed: () => onCall(c, true),
               ),
             ],
           ),
@@ -223,6 +264,7 @@ class _NewGroupTab extends StatelessWidget {
   final List<ContactModel> contacts;
   final VoidCallback onCreate;
   final bool isDark;
+
   const _NewGroupTab({
     required this.contacts,
     required this.onCreate,
@@ -247,12 +289,13 @@ class _NewGroupTab extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             'Crear un grupo',
-            style: GoogleFonts.inter(
-                fontSize: 18, fontWeight: FontWeight.w700),
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
-            'Conecta hasta 1024 personas\ncon cifrado de extremo a extremo',
+            contacts.isEmpty
+                ? 'Agrega contactos primero escaneando su QR'
+                : 'Conecta hasta 1024 personas\ncon cifrado de extremo a extremo',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 14,
@@ -263,15 +306,15 @@ class _NewGroupTab extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: onCreate,
+            onPressed: contacts.isEmpty ? null : onCreate,
             icon: const Icon(Icons.group_add_rounded),
             label: const Text('Crear grupo'),
             style: FilledButton.styleFrom(
               backgroundColor: KonectaColors.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
+                  borderRadius: BorderRadius.circular(14)),
             ),
           ),
         ],
@@ -280,12 +323,12 @@ class _NewGroupTab extends StatelessWidget {
   }
 }
 
-// Pantalla de creación de grupo
 class _CreateGroupScreen extends ConsumerStatefulWidget {
   const _CreateGroupScreen();
 
   @override
-  ConsumerState<_CreateGroupScreen> createState() => _CreateGroupScreenState();
+  ConsumerState<_CreateGroupScreen> createState() =>
+      _CreateGroupScreenState();
 }
 
 class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
@@ -293,15 +336,6 @@ class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
   final _descCtrl = TextEditingController();
   final _selectedIds = <String>{};
   bool _creating = false;
-
-  static final _epoch = DateTime.fromMillisecondsSinceEpoch(0);
-  static final _demoContacts = [
-    ContactModel(id: 'user_alice', displayName: 'Alice Torres', identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_bob',   displayName: 'Bob Ramírez',  identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_carol', displayName: 'Carol López',  identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_diana', displayName: 'Diana Pérez',  identityPublicKeyHex: '', addedAt: _epoch),
-    ContactModel(id: 'user_evan',  displayName: 'Evan Morales', identityPublicKeyHex: '', addedAt: _epoch),
-  ];
 
   Future<void> _create() async {
     if (_nameCtrl.text.trim().isEmpty) return;
@@ -320,6 +354,7 @@ class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
                 ? null
                 : _descCtrl.text.trim(),
           );
+      ref.invalidate(chatsProvider);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => ChatScreen(chat: chat)),
@@ -339,6 +374,8 @@ class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final contactsAsync = ref.watch(contactsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Nuevo grupo',
@@ -358,7 +395,8 @@ class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
             TextButton(
               onPressed: _create,
               child: const Text('Crear',
-                  style: TextStyle(color: KonectaColors.primary,
+                  style: TextStyle(
+                      color: KonectaColors.primary,
                       fontWeight: FontWeight.w700)),
             ),
         ],
@@ -374,8 +412,7 @@ class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
                   decoration: InputDecoration(
                     labelText: 'Nombre del grupo',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                        borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.group_rounded),
                   ),
                 ),
@@ -385,8 +422,7 @@ class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
                   decoration: InputDecoration(
                     labelText: 'Descripción (opcional)',
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                        borderRadius: BorderRadius.circular(12)),
                     prefixIcon: const Icon(Icons.info_outline_rounded),
                   ),
                 ),
@@ -410,35 +446,53 @@ class _CreateGroupScreenState extends ConsumerState<_CreateGroupScreen> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _demoContacts.length,
-              itemBuilder: (_, i) {
-                final c = _demoContacts[i];
-                final selected = _selectedIds.contains(c.id);
-                return CheckboxListTile(
-                  value: selected,
-                  onChanged: (v) {
-                    setState(() {
-                      if (v == true) {
-                        _selectedIds.add(c.id);
-                      } else {
-                        _selectedIds.remove(c.id);
-                      }
-                    });
-                  },
-                  activeColor: KonectaColors.primary,
-                  secondary: CircleAvatar(
-                    backgroundColor:
-                        KonectaColors.primary.withValues(alpha: 0.12),
-                    child: Text(
-                      c.displayName[0].toUpperCase(),
-                      style: const TextStyle(color: KonectaColors.primary),
+            child: contactsAsync.when(
+              loading: () => const Center(
+                  child: CircularProgressIndicator(
+                      color: KonectaColors.primary)),
+              error: (e, _) => Center(child: Text('Error: $e')),
+              data: (contacts) => contacts.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Sin contactos. Agrega amigos por QR primero.',
+                        style: GoogleFonts.inter(
+                          color: isDark
+                              ? KonectaColors.darkTextSecondary
+                              : KonectaColors.lightTextSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: contacts.length,
+                      itemBuilder: (_, i) {
+                        final c = contacts[i];
+                        final selected = _selectedIds.contains(c.id);
+                        return CheckboxListTile(
+                          value: selected,
+                          onChanged: (v) => setState(() {
+                            if (v == true) {
+                              _selectedIds.add(c.id);
+                            } else {
+                              _selectedIds.remove(c.id);
+                            }
+                          }),
+                          activeColor: KonectaColors.primary,
+                          secondary: CircleAvatar(
+                            backgroundColor:
+                                KonectaColors.primary.withValues(alpha: 0.12),
+                            child: Text(
+                              c.displayName[0].toUpperCase(),
+                              style: const TextStyle(
+                                  color: KonectaColors.primary),
+                            ),
+                          ),
+                          title: Text(c.displayName,
+                              style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600)),
+                        );
+                      },
                     ),
-                  ),
-                  title: Text(c.displayName,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                );
-              },
             ),
           ),
           const KonectaFooter(),

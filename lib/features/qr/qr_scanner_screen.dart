@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../core/database/daos/contacts_dao.dart';
+import '../../core/database/models/chat_model.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/chat/providers/chat_provider.dart';
+import '../../features/chat/repositories/chat_repository.dart';
+import '../../features/chat/screens/chat_screen.dart';
 
-class QrScannerScreen extends StatefulWidget {
+class QrScannerScreen extends ConsumerStatefulWidget {
   const QrScannerScreen({super.key});
 
   @override
-  State<QrScannerScreen> createState() => _QrScannerScreenState();
+  ConsumerState<QrScannerScreen> createState() => _QrScannerScreenState();
 }
 
-class _QrScannerScreenState extends State<QrScannerScreen> {
+class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
   late final MobileScannerController _controller;
   bool _detected = false;
   bool _torchOn = false;
@@ -34,14 +40,52 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       if (value != null && value.startsWith('konecta://add/')) {
         _detected = true;
         _controller.stop();
-        final userId = value.replaceFirst('konecta://add/', '');
-        _showContactFound(userId);
+        _handleKonectaUrl(value);
         return;
       }
     }
   }
 
-  void _showContactFound(String userId) {
+  void _handleKonectaUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+
+    // konecta://add/{userId}?name={displayName}
+    final userId = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
+    final name =
+        uri.queryParameters['name'] ?? userId;
+
+    if (userId.isEmpty) {
+      setState(() => _detected = false);
+      _controller.start();
+      return;
+    }
+
+    _showContactFound(userId, name);
+  }
+
+  Future<void> _saveAndChat(String userId, String displayName) async {
+    final contact = ContactModel(
+      id: userId,
+      displayName: displayName,
+      identityPublicKeyHex: '',
+      addedAt: DateTime.now(),
+    );
+    await ContactsDao().upsert(contact);
+    ref.invalidate(contactsProvider);
+
+    // Crear o abrir chat individual
+    final chat = await ref.read(chatRepositoryProvider).createIndividualChat(contact);
+    ref.invalidate(chatsProvider);
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // cierra scanner
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ChatScreen(chat: chat)),
+    );
+  }
+
+  void _showContactFound(String userId, String displayName) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -51,32 +95,35 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: KonectaColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: KonectaColors.primary.withValues(alpha: 0.12),
+              child: Text(
+                displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: KonectaColors.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 24,
+                ),
               ),
-              child: const Icon(Icons.person_add_rounded,
-                  size: 40, color: KonectaColors.primary),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              userId,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: KonectaColors.primary,
-              ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Para agregar este contacto, comparte tu ID con él y pídele '
-              'que te agregue. La sincronización automática de contactos '
-              'llegará cuando el backend esté en producción.',
+              displayName,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 12, height: 1.5),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              userId,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: KonectaColors.primary,
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -84,9 +131,18 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context, userId);
+              Navigator.pop(context);
             },
-            child: const Text('Entendido'),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: KonectaColors.primary),
+            onPressed: () {
+              Navigator.pop(context);
+              _saveAndChat(userId, displayName);
+            },
+            child: const Text('Agregar y chatear'),
           ),
         ],
       ),
@@ -102,7 +158,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         backgroundColor: Colors.black,
         title: Text(
           'Escanear QR',
-          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(
+              color: Colors.white, fontWeight: FontWeight.w700),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
@@ -111,7 +168,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              _torchOn ? Icons.flashlight_off_rounded : Icons.flashlight_on_rounded,
+              _torchOn
+                  ? Icons.flashlight_off_rounded
+                  : Icons.flashlight_on_rounded,
               color: _torchOn ? KonectaColors.accent : Colors.white,
             ),
             tooltip: 'Linterna',
@@ -125,13 +184,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       body: Stack(
         alignment: Alignment.center,
         children: [
-          // Camera viewfinder
           MobileScanner(
             controller: _controller,
             onDetect: _onDetect,
           ),
-
-          // Dark overlay with cutout
           ColorFiltered(
             colorFilter: ColorFilter.mode(
               Colors.black.withValues(alpha: 0.55),
@@ -156,8 +212,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               ],
             ),
           ),
-
-          // Scanning frame corners
           Center(
             child: SizedBox(
               width: 260,
@@ -165,8 +219,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               child: CustomPaint(painter: _ScannerFramePainter()),
             ),
           ),
-
-          // Instructions
           Positioned(
             bottom: 80,
             left: 32,
@@ -180,7 +232,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
+                    shadows: const [
+                      Shadow(color: Colors.black54, blurRadius: 8)
+                    ],
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -190,14 +244,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                   style: GoogleFonts.inter(
                     color: Colors.white70,
                     fontSize: 13,
-                    shadows: const [Shadow(color: Colors.black54, blurRadius: 8)],
+                    shadows: const [
+                      Shadow(color: Colors.black54, blurRadius: 8)
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-
-          // Scanning line animation
           Center(
             child: _ScanLine(isDark: isDark),
           ),
@@ -219,25 +273,40 @@ class _ScannerFramePainter extends CustomPainter {
     const len = 30.0;
     const r = 16.0;
 
-    // Top-left corner
     canvas.drawLine(Offset(0, r + len), Offset(0, r), paint);
-    canvas.drawArc(const Rect.fromLTWH(0, 0, r * 2, r * 2), 3.14159, 1.5708, false, paint);
+    canvas.drawArc(
+        const Rect.fromLTWH(0, 0, r * 2, r * 2), 3.14159, 1.5708, false, paint);
     canvas.drawLine(Offset(r, 0), Offset(r + len, 0), paint);
 
-    // Top-right corner
-    canvas.drawLine(Offset(size.width - r - len, 0), Offset(size.width - r, 0), paint);
-    canvas.drawArc(Rect.fromLTWH(size.width - r * 2, 0, r * 2, r * 2), -1.5708, 1.5708, false, paint);
-    canvas.drawLine(Offset(size.width, r), Offset(size.width, r + len), paint);
+    canvas.drawLine(
+        Offset(size.width - r - len, 0), Offset(size.width - r, 0), paint);
+    canvas.drawArc(Rect.fromLTWH(size.width - r * 2, 0, r * 2, r * 2),
+        -1.5708, 1.5708, false, paint);
+    canvas.drawLine(
+        Offset(size.width, r), Offset(size.width, r + len), paint);
 
-    // Bottom-left corner
-    canvas.drawLine(Offset(0, size.height - r - len), Offset(0, size.height - r), paint);
-    canvas.drawArc(Rect.fromLTWH(0, size.height - r * 2, r * 2, r * 2), 1.5708, 1.5708, false, paint);
-    canvas.drawLine(Offset(r, size.height), Offset(r + len, size.height), paint);
+    canvas.drawLine(Offset(0, size.height - r - len),
+        Offset(0, size.height - r), paint);
+    canvas.drawArc(
+        Rect.fromLTWH(0, size.height - r * 2, r * 2, r * 2),
+        1.5708,
+        1.5708,
+        false,
+        paint);
+    canvas.drawLine(
+        Offset(r, size.height), Offset(r + len, size.height), paint);
 
-    // Bottom-right corner
-    canvas.drawLine(Offset(size.width - r - len, size.height), Offset(size.width - r, size.height), paint);
-    canvas.drawArc(Rect.fromLTWH(size.width - r * 2, size.height - r * 2, r * 2, r * 2), 0, 1.5708, false, paint);
-    canvas.drawLine(Offset(size.width, size.height - r - len), Offset(size.width, size.height - r), paint);
+    canvas.drawLine(Offset(size.width - r - len, size.height),
+        Offset(size.width - r, size.height), paint);
+    canvas.drawArc(
+        Rect.fromLTWH(
+            size.width - r * 2, size.height - r * 2, r * 2, r * 2),
+        0,
+        1.5708,
+        false,
+        paint);
+    canvas.drawLine(Offset(size.width, size.height - r - len),
+        Offset(size.width, size.height - r), paint);
   }
 
   @override
@@ -252,7 +321,8 @@ class _ScanLine extends StatefulWidget {
   State<_ScanLine> createState() => _ScanLineState();
 }
 
-class _ScanLineState extends State<_ScanLine> with SingleTickerProviderStateMixin {
+class _ScanLineState extends State<_ScanLine>
+    with SingleTickerProviderStateMixin {
   late AnimationController _anim;
   late Animation<double> _pos;
 

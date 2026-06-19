@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../../core/network/socket_client.dart';
+import '../../core/notifications/fcm_service.dart';
 import '../../core/services/update_checker.dart';
 import '../../shared/widgets/konecta_footer.dart';
 import '../../shared/widgets/update_dialog.dart';
+import '../auth/repositories/auth_repository.dart';
+import '../chat/providers/chat_provider.dart';
+import '../chat/repositories/chat_repository.dart';
+import '../chat/screens/chat_screen.dart';
 import '../chat/screens/new_chat_screen.dart';
 import 'widgets/chats_tab.dart';
 import 'widgets/calls_tab.dart';
@@ -31,8 +37,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Verificar actualización después del primer frame
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectWebSocket();
+      _checkForUpdate();
+      _handlePendingFcm();
+    });
+  }
+
+  @override
+  void dispose() {
+    ref.read(socketProvider.notifier).disconnect();
+    super.dispose();
+  }
+
+  /// Conecta el WebSocket relay con userId + FCM token del dispositivo.
+  void _connectWebSocket() {
+    final profile = ref.read(authProvider).profile;
+    if (profile == null) return;
+    ref.read(socketProvider.notifier).connect(
+          profile.userId,
+          profile.userId,
+          fcmToken: FcmService.pendingFcmToken,
+        );
+  }
+
+  /// Procesa mensajes recibidos via FCM cuando el usuario estaba offline,
+  /// y navega al chat pendiente si lo hay.
+  Future<void> _handlePendingFcm() async {
+    // 1. Guardar mensaje FCM en BD local
+    final msgData = FcmService.pendingMessageData;
+    if (msgData != null) {
+      FcmService.clearPendingMessageData();
+      try {
+        await ref.read(chatRepositoryProvider).receiveFcmMessage(msgData);
+        ref.invalidate(chatsProvider);
+      } catch (_) {}
+    }
+
+    // 2. Navegar al chat pendiente
+    final chatId = FcmService.pendingChatId;
+    if (chatId == null) return;
+    FcmService.clearPendingChatId();
+    final chats = await ref.read(chatRepositoryProvider).loadChats();
+    final chat = chats.where((c) => c.id == chatId).firstOrNull;
+    if (chat != null && mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ChatScreen(chat: chat)),
+      );
+    }
   }
 
   Future<void> _checkForUpdate() async {

@@ -246,6 +246,53 @@ class ChatRepository {
       _chatsDao.toggleMute(chatId, muted);
   Future<void> archiveChat(String chatId) =>
       _chatsDao.toggleArchive(chatId, true);
+
+  /// Guarda un mensaje recibido via FCM cuando el usuario estaba offline.
+  /// Crea el chat si no existe. Se llama desde HomeScreen al iniciar.
+  Future<void> receiveFcmMessage(Map<String, String> data) async {
+    final ciphertext = data['ciphertext'];
+    final chatId = data['chatId'];
+    final from = data['from'];
+    final messageId = data['messageId'];
+    final ts = int.tryParse(data['timestamp'] ?? '');
+    if (ciphertext == null ||
+        chatId == null ||
+        from == null ||
+        messageId == null) {
+      return;
+    }
+
+    // Asegurar que el chat existe
+    final existingChat = await _chatsDao.getById(chatId);
+    if (existingChat == null) {
+      await _chatsDao.upsert(ChatModel(
+        id: chatId,
+        type: ChatType.individual,
+        name: from,
+        createdAt: DateTime.now(),
+      ));
+    }
+
+    final sentAt =
+        ts != null ? DateTime.fromMillisecondsSinceEpoch(ts) : DateTime.now();
+    await _messagesDao.insert(MessageModel(
+      id: messageId,
+      chatId: chatId,
+      senderId: from,
+      type: MessageType.text,
+      encryptedContent: ciphertext,
+      status: MessageStatus.delivered,
+      sentAt: sentAt,
+      deliveredAt: DateTime.now(),
+    ));
+    await _chatsDao.incrementUnread(chatId);
+    await _chatsDao.updateLastMessage(
+      chatId,
+      messageId: messageId,
+      preview: '🔒 Mensaje nuevo',
+      sentAt: sentAt,
+    );
+  }
 }
 
 final chatRepositoryProvider = Provider<ChatRepository>(

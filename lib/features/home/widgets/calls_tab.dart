@@ -5,6 +5,7 @@ import '../../../core/l10n/app_localizations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/webrtc/call_state.dart';
 import '../../../core/webrtc/webrtc_service.dart';
+import '../../../features/auth/repositories/auth_repository.dart';
 import '../../../features/calls/screens/call_screen.dart';
 
 class CallsTab extends ConsumerWidget {
@@ -60,12 +61,13 @@ class CallsTab extends ConsumerWidget {
     required String peerName,
     required bool isVideo,
   }) async {
+    final myUserId = ref.read(authProvider).profile?.userId ?? '';
     final service = ref.read(webRTCProvider.notifier);
     await service.startCall(
       peerId: peerId,
       peerName: peerName,
       isVideo: isVideo,
-      myUserId: 'me',
+      myUserId: myUserId,
     );
     if (!context.mounted) return;
     Navigator.of(context).push(

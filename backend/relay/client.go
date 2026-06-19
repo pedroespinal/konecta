@@ -20,25 +20,27 @@ const (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	// En produccion: verificar origen
-	CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-// Client representa una conexion WebSocket activa.
+// Client representa una conexión WebSocket activa.
 type Client struct {
-	hub    *Hub
-	conn   *websocket.Conn
-	send   chan []byte
-	userID string
+	hub      *Hub
+	conn     *websocket.Conn
+	send     chan []byte
+	userID   string
+	fcmToken string // token FCM del dispositivo, puede estar vacío
 }
 
-// ServeWS actualiza la conexion HTTP a WebSocket y registra el cliente en el hub.
+// ServeWS actualiza la conexión HTTP a WebSocket y registra el cliente en el hub.
+// Parámetros de query esperados: userId (requerido), fcmToken (opcional).
 func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	userID := r.URL.Query().Get("userId")
 	if userID == "" {
 		http.Error(w, "userId requerido", http.StatusBadRequest)
 		return
 	}
+	fcmToken := r.URL.Query().Get("fcmToken")
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -47,10 +49,11 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := &Client{
-		hub:    hub,
-		conn:   conn,
-		send:   make(chan []byte, 256),
-		userID: userID,
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan []byte, 256),
+		userID:   userID,
+		fcmToken: fcmToken,
 	}
 	hub.register <- c
 
@@ -93,7 +96,6 @@ func (c *Client) readPump() {
 			c.send <- pong
 
 		case models.PayloadMessage, models.PayloadPreKeyBundle:
-			// Enrutar al destinatario — el servidor no lee el ciphertext
 			env.From = c.userID
 			out, _ := json.Marshal(env)
 			c.hub.route <- routeMsg{to: env.To, data: out, from: c}
@@ -103,7 +105,6 @@ func (c *Client) readPump() {
 			out, _ := json.Marshal(env)
 			c.hub.route <- routeMsg{to: env.To, data: out, from: c}
 
-		// Señalización WebRTC — se reenvía tal cual al peer
 		case models.PayloadCallInvite, models.PayloadCallAccept,
 			models.PayloadCallReject, models.PayloadCallEnd,
 			models.PayloadSdpOffer, models.PayloadSdpAnswer,

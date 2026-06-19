@@ -227,10 +227,19 @@ class _StoriesTabState extends State<StoriesTab> {
             ),
           ),
         ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _StoryListItem(index: index),
-            childCount: 8,
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Text(
+                'Los estados de tus contactos aparecerán aquí',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            ),
           ),
         ),
       ],
@@ -299,48 +308,3 @@ class _MyStoryTile extends StatelessWidget {
   }
 }
 
-class _StoryListItem extends StatelessWidget {
-  final int index;
-  const _StoryListItem({required this.index});
-  static const _names = [
-    'Maria Garcia', 'Carlos Lopez', 'Sofia Chen', 'Laura Martinez',
-    'Diego Morales', 'Roberto Silva', 'Valentina Ruiz', 'Juan Perez',
-  ];
-  static const _times = [
-    'Hace 5 min', 'Hace 23 min', 'Hace 1 hora', 'Hace 2 horas',
-    'Hace 3 horas', 'Hace 5 horas', 'Hace 8 horas', 'Hace 12 horas',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: KonectaColors.primary, width: 2.5),
-        ),
-        padding: const EdgeInsets.all(2),
-        child: CircleAvatar(
-          backgroundColor: KonectaColors.secondary.withValues(alpha: 0.2),
-          child: Text(
-            _names[index][0],
-            style: const TextStyle(
-                color: KonectaColors.secondary, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ),
-      title: Text(_names[index]),
-      subtitle: Text(_times[index]),
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ver estado de ${_names[index]} — próximamente'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      },
-    );
-  }
-}

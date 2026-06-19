@@ -1,10 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../router/app_router.dart';
 
-/// Maneja mensajes FCM en background (cuando la app está cerrada).
+/// Handler de background — se ejecuta en isolate separado.
 @pragma('vm:entry-point')
 Future<void> _onBackgroundMessage(RemoteMessage message) async {
+  // Firebase mostrará la notificación automáticamente (campo notification).
+  // El mensaje se guarda cuando el usuario toca y abre la app (onMessageOpenedApp).
   debugPrint('[FCM] background: ${message.notification?.title}');
 }
 
@@ -14,50 +17,68 @@ class FcmService {
   static final _messaging = FirebaseMessaging.instance;
 
   static Future<void> initialize() async {
-    // Solicitar permiso (iOS/web; Android 13+ también)
     await _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    // Registrar handler de background
     FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
-    // Foreground: mostrar notificación como SnackBar / banner
+    // Foreground: cuando la app está abierta y llega un FCM
+    // (ocurre si el WebSocket se desconecta temporalmente)
     FirebaseMessaging.onMessage.listen((message) {
       debugPrint('[FCM] foreground: ${message.notification?.title}');
-      // El relay ya entrega el mensaje por WebSocket en foreground;
-      // FCM solo se necesita cuando la app está en background/cerrada.
+      final data = message.data;
+      if (data.containsKey('ciphertext') && data.containsKey('chatId')) {
+        _pendingMessageData = Map<String, String>.from(data);
+      }
     });
 
     // Notificación clickeada desde background
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       debugPrint('[FCM] opened from background: ${message.data}');
-      // TODO: navegar al chat correspondiente usando message.data['chatId']
+      final data = message.data;
+      final chatId = data['chatId'] as String?;
+      if (chatId != null) _pendingChatId = chatId;
+      if (data.containsKey('ciphertext')) {
+        _pendingMessageData = Map<String, String>.from(data);
+      }
+      appRouter.go(AppRoutes.home);
     });
 
-    // Token del dispositivo — enviar al relay cuando esté disponible
-    final token = await _messaging.getToken();
-    if (token != null) {
-      debugPrint('[FCM] token: $token');
-      await _sendTokenToRelay(token);
+    // Cold start (app cerrada)
+    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    if (initial != null) {
+      final data = initial.data;
+      final chatId = data['chatId'] as String?;
+      if (chatId != null) _pendingChatId = chatId;
+      if (data.containsKey('ciphertext')) {
+        _pendingMessageData = Map<String, String>.from(data);
+      }
     }
 
-    // Renovación automática del token
-    _messaging.onTokenRefresh.listen(_sendTokenToRelay);
-  }
-
-  static Future<void> _sendTokenToRelay(String token) async {
-    // El relay almacena el token para enviar FCM cuando el usuario esté offline.
-    // Se implementa via WebSocket: envía mensaje tipo "register_fcm_token".
-    debugPrint('[FCM] enviando token al relay: ${token.substring(0, 20)}...');
-    // El KonectaSocketClient lo enviará al conectar (ver socket_client.dart).
-    _pendingToken = token;
+    // FCM token del dispositivo
+    final token = await _messaging.getToken();
+    if (token != null) {
+      debugPrint('[FCM] token: ${token.substring(0, 20)}...');
+      _pendingToken = token;
+    }
+    _messaging.onTokenRefresh.listen((t) => _pendingToken = t);
   }
 
   static String? _pendingToken;
   static String? get pendingFcmToken => _pendingToken;
+
+  static String? _pendingChatId;
+  static String? get pendingChatId => _pendingChatId;
+  static void clearPendingChatId() => _pendingChatId = null;
+
+  /// Datos del mensaje FCM recibido (ciphertext, chatId, from, messageId, timestamp).
+  /// HomeScreen lo procesa al iniciarse para guardar el mensaje en la BD local.
+  static Map<String, String>? _pendingMessageData;
+  static Map<String, String>? get pendingMessageData => _pendingMessageData;
+  static void clearPendingMessageData() => _pendingMessageData = null;
 }
 
 final fcmServiceProvider = Provider<FcmService>((ref) => FcmService._());

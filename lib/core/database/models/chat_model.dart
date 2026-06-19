@@ -68,6 +68,7 @@ class ChatModel {
         'name': name,
         'avatar_path': avatarPath,
         'last_message_id': lastMessageId,
+        'last_message_preview': lastMessagePreview,
         'last_message_at': lastMessageAt?.millisecondsSinceEpoch,
         'unread_count': unreadCount,
         'is_muted': isMuted ? 1 : 0,
@@ -85,6 +86,7 @@ class ChatModel {
         name: map['name'] as String,
         avatarPath: map['avatar_path'] as String?,
         lastMessageId: map['last_message_id'] as String?,
+        lastMessagePreview: map['last_message_preview'] as String?,
         lastMessageAt: map['last_message_at'] != null
             ? DateTime.fromMillisecondsSinceEpoch(map['last_message_at'] as int)
             : null,
