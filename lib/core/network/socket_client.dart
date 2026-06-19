@@ -13,8 +13,6 @@ class SocketState {
 }
 
 class KonectaSocketClient extends StateNotifier<SocketState> {
-  // Actualizar con el URL de Railway después del deploy:
-  // wss://<nombre>.up.railway.app/ws
   static const String _relayUrl = 'wss://relay-production-38eb.up.railway.app/ws';
 
   WebSocketChannel? _channel;
