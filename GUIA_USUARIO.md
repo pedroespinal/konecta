@@ -1,7 +1,7 @@
 # Guía de Usuario — Konecta v1.2.0
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.2.0 (build 13) — 17 de junio de 2026
+**Versión:** 1.2.0 (build 14) — 19 de junio de 2026
 
 ---
 
@@ -239,8 +239,9 @@ Cuando haya una versión nueva disponible en GitHub:
 |---------|-------------|
 | 🟣 Violeta Konecta | Nueva identidad visual — color firma exclusivo de Konecta |
 | 🚨 PIN de pánico | PIN alternativo que muestra app vacía — nadie sabrá que hay datos reales |
-| ☁️ Backend Railway | Relay Go listo para producción (deploy en Railway) |
-| 🔔 Push notifications | Integración FCM — notificaciones cuando la app está cerrada |
+| ☁️ Relay en producción | WebSocket relay Go desplegado en Railway — mensajes en tiempo real activos |
+| 🔔 Push FCM offline | FCM configurado con Firebase Admin SDK — notificaciones cuando el destinatario está offline |
+| 🔗 WebSocket activo | HomeScreen conecta automáticamente al iniciar; reconexión automática con backoff |
 
 ### PIN de pánico — cómo usarlo
 
@@ -292,7 +293,8 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **1.2.0** | jun 2026 | **Violeta Konecta** (nueva identidad); **PIN de pánico** (modo decoy); backend Railway listo; FCM push notifications |
+| **1.2.0+14** | jun 2026 | **Relay en producción** (Railway); WebSocket activo desde HomeScreen; FCM push offline con Firebase Admin SDK; URL real del relay configurada |
+| **1.2.0+13** | jun 2026 | **Violeta Konecta** (nueva identidad); **PIN de pánico** (modo decoy); backend Railway listo; FCM push notifications |
 | 1.1.0 | jun 2026 | **Capa 1 completa**: Escáner QR funcional; mensajes efímeros configurables; editar mensajes; destacar y ver mensajes guardados; estados de texto reales; responder y reaccionar ya operativos; menú contextual mejorado |
 | 1.0.9 | jun 2026 | **Bug fixes de navegación**: botón Actualizar ahora abre GitHub; tap en Estado, Invitar amigos, Agregar amigos y Crear grupos ya funcionan; manifest Android con queries HTTPS para url_launcher |
 | 1.0.8 | jun 2026 | **Teal Esmeralda** (paleta nueva, dark mode legible); biometría CORREGIDA; lock screen navega al home; PIN back button corregido; QR personal; búsqueda de chats; bloqueo capturas; auto-lock; foto de perfil en Ajustes |
