@@ -9,7 +9,6 @@ import '../../../core/database/models/chat_model.dart';
 import '../../../core/database/models/message_model.dart';
 import '../../../core/network/message_payload.dart';
 import '../../../core/network/socket_client.dart';
-import '../../../core/security/crypto/secure_key_store.dart';
 import '../../../features/auth/repositories/auth_repository.dart';
 
 // Cifrado simetrico de mensajes para Fase 3.
@@ -18,19 +17,12 @@ class _MessageCipher {
   static final _aesGcm = AesGcm.with256bits();
   static final _uuid = Uuid();
 
-  // Deriva una clave de sesion temporal desde la clave de identidad local
-  // En produccion (Fase 5): clave derivada del X3DH handshake
+  // Clave simétrica compartida derivada del chatId.
+  // Ambos dispositivos conocen el chatId → misma clave → descifrado correcto.
+  // Fase 5: reemplazar con clave derivada de X3DH / Double Ratchet.
   static Future<SecretKey> _sessionKey(String chatId) async {
-    final identityPriv = await SecureKeyStore.readKey('identity_private');
-    if (identityPriv == null) throw StateError('Sin clave de identidad');
-    final rawBytes = hex.decode(identityPriv);
-    // XOR con el hash del chatId para que cada chat tenga clave diferente
-    final chatBytes = utf8.encode(chatId);
-    final mixed = List<int>.generate(
-      32,
-      (i) => rawBytes[i % rawBytes.length] ^ chatBytes[i % chatBytes.length],
-    );
-    return SecretKey(mixed);
+    final hash = await Sha256().hash(utf8.encode('konecta:v1:$chatId'));
+    return SecretKey(hash.bytes);
   }
 
   static Future<String> encrypt(String plaintext, String chatId) async {
@@ -140,7 +132,7 @@ class ChatRepository {
     final payload = MessagePayload(
       type: PayloadType.message,
       from: msg.senderId,
-      to: msg.chatId, // en individual = userId del receptor
+      to: _peerUserId(msg.chatId, msg.senderId),
       ciphertext: msg.encryptedContent,
       messageId: msg.id,
       timestamp: msg.sentAt.millisecondsSinceEpoch,
@@ -148,8 +140,37 @@ class ChatRepository {
     socket.sendMessage(payload);
   }
 
-  Future<void> receiveMessage(MessagePayload payload, String chatId) async {
-    final decrypted = await _MessageCipher.decrypt(payload.ciphertext, chatId);
+  /// Extrae el userId del peer a partir del chatId.
+  /// Formato: 'chat_<32hexA>_<32hexB>' (A y B son userIds de 32 chars hex).
+  String _peerUserId(String chatId, String myUserId) {
+    if (!chatId.startsWith('chat_')) return chatId; // grupos: usar chatId
+    final inner = chatId.substring(5);
+    final mid = inner.indexOf('_');
+    if (mid < 0) return chatId;
+    final a = inner.substring(0, mid);
+    final b = inner.substring(mid + 1);
+    return a == myUserId ? b : a;
+  }
+
+  Future<MessageModel?> receiveMessage(MessagePayload payload, String chatId) async {
+    // Crear el chat si no existe aún
+    final existing = await _chatsDao.getById(chatId);
+    if (existing == null) {
+      await _chatsDao.upsert(ChatModel(
+        id: chatId,
+        type: ChatType.individual,
+        name: payload.from,
+        createdAt: DateTime.now(),
+      ));
+    }
+
+    String decrypted;
+    try {
+      decrypted = await _MessageCipher.decrypt(payload.ciphertext, chatId);
+    } catch (_) {
+      decrypted = '[Mensaje cifrado]';
+    }
+
     final msg = MessageModel(
       id: payload.messageId,
       chatId: chatId,
@@ -161,10 +182,11 @@ class ChatRepository {
       sentAt: DateTime.fromMillisecondsSinceEpoch(payload.timestamp),
       deliveredAt: DateTime.now(),
     );
-    await _messagesDao.insert(msg);
+    await _messagesDao.insert(msg); // ConflictAlgorithm.replace — idempotente
     await _chatsDao.incrementUnread(chatId);
     await _chatsDao.updateLastMessage(chatId,
         messageId: msg.id, preview: decrypted, sentAt: msg.sentAt);
+    return msg;
   }
 
   Future<void> markRead(String chatId) async {

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/database/models/chat_model.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/providers/decoy_mode_provider.dart';
@@ -14,11 +16,35 @@ import '../../../features/chat/repositories/chat_repository.dart';
 import '../../../features/chat/screens/chat_screen.dart';
 import '../../qr/qr_scanner_screen.dart';
 
-class ContactsTab extends ConsumerWidget {
+class ContactsTab extends ConsumerStatefulWidget {
   const ContactsTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ContactsTab> createState() => _ContactsTabState();
+}
+
+class _ContactsTabState extends ConsumerState<ContactsTab> {
+  List<Contact>? _phoneContacts;
+  bool _phonePermissionDenied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPhoneContacts();
+  }
+
+  Future<void> _loadPhoneContacts() async {
+    final granted = await FlutterContacts.requestPermission(readonly: true);
+    if (!granted) {
+      if (mounted) setState(() => _phonePermissionDenied = true);
+      return;
+    }
+    final contacts = await FlutterContacts.getContacts(withProperties: true);
+    if (mounted) setState(() => _phoneContacts = contacts);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDecoy = ref.watch(decoyModeProvider);
 
@@ -39,8 +65,9 @@ class ContactsTab extends ConsumerWidget {
                   Text('Sin contactos',
                       style: GoogleFonts.inter(
                           fontSize: 15,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant)),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurfaceVariant)),
                 ],
               ),
             ),
@@ -71,81 +98,125 @@ class ContactsTab extends ConsumerWidget {
         // Invitar amigos
         const SliverToBoxAdapter(child: _InviteTile()),
 
-        // Lista de contactos reales
+        // Contactos Konecta
         contactsAsync.when(
-          loading: () => const SliverFillRemaining(
+          loading: () => const SliverToBoxAdapter(
             child: Center(
-                child: CircularProgressIndicator(color: KonectaColors.primary)),
+                child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(color: KonectaColors.primary),
+            )),
           ),
-          error: (e, _) => SliverFillRemaining(
+          error: (e, _) => SliverToBoxAdapter(
             child: Center(child: Text('Error: $e')),
           ),
           data: (contacts) {
-            if (contacts.isEmpty) {
-              return SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.qr_code_rounded,
-                          size: 64,
-                          color: KonectaColors.primary.withValues(alpha: 0.3)),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Sin contactos aún',
-                        style: GoogleFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+            if (contacts.isEmpty && (_phoneContacts == null || _phoneContacts!.isEmpty)) {
+              return SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.qr_code_rounded,
+                            size: 64,
+                            color: KonectaColors.primary.withValues(alpha: 0.3)),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Sin contactos de Konecta aún',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Escanea el código QR de un amigo\npara agregarlo como contacto',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
-                          height: 1.5,
+                        const SizedBox(height: 8),
+                        Text(
+                          'Escanea el código QR de un amigo\npara agregarlo',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                            height: 1.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const QrScannerScreen()),
+                        const SizedBox(height: 20),
+                        FilledButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                                builder: (_) => const QrScannerScreen()),
+                          ),
+                          icon: const Icon(Icons.qr_code_scanner_rounded),
+                          label: const Text('Escanear QR'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: KonectaColors.primary,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 28, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                          ),
                         ),
-                        icon: const Icon(Icons.qr_code_scanner_rounded),
-                        label: const Text('Escanear QR'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: KonectaColors.primary,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 28, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
             }
 
+            if (contacts.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
             return SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => _ContactItem(
-                  contact: contacts[index],
-                  onChat: () => _openChat(context, ref, contacts[index]),
-                  onCall: (isVideo) =>
-                      _startCall(context, ref, contacts[index], isVideo),
-                ),
-                childCount: contacts.length,
+                (context, index) {
+                  if (index == 0) {
+                    return _SectionHeader(
+                      icon: Icons.lock_rounded,
+                      label: 'En Konecta',
+                      color: KonectaColors.primary,
+                    );
+                  }
+                  final c = contacts[index - 1];
+                  return _ContactItem(
+                    contact: c,
+                    onChat: () => _openChat(context, ref, c),
+                    onCall: (isVideo) => _startCall(context, ref, c, isVideo),
+                  );
+                },
+                childCount: contacts.length + 1,
               ),
             );
           },
         ),
+
+        // Sección: Directorio telefónico
+        if (!_phonePermissionDenied && _phoneContacts != null)
+          _PhoneContactsSection(
+            contacts: _phoneContacts!,
+            konectaIds: contactsAsync.value?.map((c) => c.id).toSet() ?? {},
+          ),
+
+        if (_phonePermissionDenied)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: OutlinedButton.icon(
+                onPressed: _loadPhoneContacts,
+                icon: const Icon(Icons.contacts_rounded),
+                label: const Text('Permitir acceso al directorio'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: KonectaColors.primary,
+                  side: const BorderSide(color: KonectaColors.primary),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -269,6 +340,99 @@ class _ContactItem extends ConsumerWidget {
               ],
             ),
       onTap: isMe ? null : onChat,
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _SectionHeader({required this.icon, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Divider(
+              color: isDark ? KonectaColors.darkBorder : KonectaColors.lightBorder,
+              thickness: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PhoneContactsSection extends StatelessWidget {
+  final List<Contact> contacts;
+  final Set<String> konectaIds;
+  const _PhoneContactsSection({required this.contacts, required this.konectaIds});
+
+  @override
+  Widget build(BuildContext context) {
+    if (contacts.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (ctx, index) {
+          if (index == 0) {
+            return _SectionHeader(
+              icon: Icons.contacts_rounded,
+              label: 'Directorio telefónico',
+              color: KonectaColors.accent,
+            );
+          }
+          final c = contacts[index - 1];
+          final phone = c.phones.isNotEmpty ? c.phones.first.number : '';
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundColor: KonectaColors.accent.withValues(alpha: 0.12),
+              child: Text(
+                c.displayName.isNotEmpty ? c.displayName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                    color: KonectaColors.accent, fontWeight: FontWeight.w700),
+              ),
+            ),
+            title: Text(c.displayName,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+            subtitle: phone.isNotEmpty
+                ? Text(phone,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey))
+                : null,
+            trailing: TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: KonectaColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              ),
+              onPressed: () {
+                Share.share(
+                  '¡Descarga Konecta! Mensajería privada y segura.\nhttps://github.com/pedroespinal/konecta/releases/latest',
+                  subject: 'Konecta — Mensajería segura',
+                );
+              },
+              child: const Text('Invitar'),
+            ),
+          );
+        },
+        childCount: contacts.length + 1,
+      ),
     );
   }
 }

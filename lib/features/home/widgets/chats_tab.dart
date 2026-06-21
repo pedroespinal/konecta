@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/database/daos/chats_dao.dart';
 import '../../../core/database/models/chat_model.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../core/providers/decoy_mode_provider.dart';
@@ -56,12 +57,7 @@ class ChatsTab extends ConsumerWidget {
                       ),
                     );
                   case 'archived':
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Archivados: próximamente'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    _showArchivedChats(context, ref);
                   case 'mark_read':
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -162,11 +158,35 @@ class ChatsTab extends ConsumerWidget {
           ),
           data: (chats) {
             if (chats.isEmpty) {
-              // Si no hay chats reales, muestra la demo
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _DemoChatItem(index: index),
-                  childCount: 15,
+              return SliverFillRemaining(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.chat_bubble_outline_rounded,
+                          size: 64,
+                          color: KonectaColors.primary.withValues(alpha: 0.3)),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Sin chats aún',
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Escanea el QR de un amigo\npara iniciar una conversación',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
@@ -368,167 +388,69 @@ class _RealChatItem extends StatelessWidget {
   }
 }
 
-// Item demo (cuando no hay chats en la DB)
-class _DemoChatItem extends StatelessWidget {
-  final int index;
-  const _DemoChatItem({required this.index});
-
-  static final List<Map<String, String>> _demoData = [
-    {'name': 'Maria Garcia',   'msg': 'Hola! Como estas?',           'time': '10:42', 'unread': '3'},
-    {'name': 'Carlos Lopez',   'msg': 'Te mando los archivos ahora', 'time': '10:15', 'unread': ''},
-    {'name': 'Familia 🏠',     'msg': 'Ana: Nos vemos el sabado',    'time': '09:30', 'unread': '7'},
-    {'name': 'Juan Perez',     'msg': 'Perfecto, gracias!',          'time': 'Ayer',  'unread': ''},
-    {'name': 'Trabajo Dev',    'msg': 'Pedro: Revisamos mañana',     'time': 'Ayer',  'unread': '2'},
-    {'name': 'Laura Martinez', 'msg': '🎵 Audio (0:34)',             'time': 'Ayer',  'unread': ''},
-    {'name': 'Roberto Silva',  'msg': 'Foto',                        'time': 'Mar',   'unread': ''},
-    {'name': 'Amigos 🎉',      'msg': 'Carlos: jaja exacto!',        'time': 'Mar',   'unread': '12'},
-    {'name': 'Sofia Chen',     'msg': 'Llamada de voz • 5 min',      'time': 'Lun',   'unread': ''},
-    {'name': 'Diego Morales',  'msg': 'Ok confirmo',                 'time': 'Dom',   'unread': ''},
-    {'name': 'Valentina Ruiz', 'msg': 'Video (0:15)',                'time': 'Sab',   'unread': ''},
-    {'name': 'Proyecto Konecta','msg': 'Build aprobado ✅',          'time': 'Vie',   'unread': ''},
-    {'name': 'Miguel Torres',  'msg': 'Hablamos luego',              'time': 'Jue',   'unread': ''},
-    {'name': 'Ana Jimenez',    'msg': 'Documento.pdf',               'time': 'Mie',   'unread': ''},
-    {'name': 'Fernando Vega',  'msg': 'Encriptado 🔒',               'time': 'Mar',   'unread': '1'},
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    if (index >= _demoData.length) return const SizedBox.shrink();
-    final data = _demoData[index];
-    final hasUnread = data['unread']!.isNotEmpty;
-
-    return InkWell(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Toca el botón + para iniciar un chat real'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: _avatarColor(index),
-                  child: Text(
-                    data['name']![0],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-                if (index < 3)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 13,
-                      height: 13,
-                      decoration: BoxDecoration(
-                        color: KonectaColors.online,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+Future<void> _showArchivedChats(BuildContext ctx, WidgetRef ref) async {
+  final all = await ChatsDao().getAll(includeArchived: true);
+  final archived = all.where((c) => c.isArchived).toList();
+  if (!ctx.mounted) return;
+  showModalBottomSheet(
+    context: ctx,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (bCtx) => DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      minChildSize: 0.3,
+      maxChildSize: 0.9,
+      builder: (_, sc) => Column(
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(2),
             ),
-            const SizedBox(width: 14),
+          ),
+          const SizedBox(height: 16),
+          Text('Chats archivados',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16)),
+          const SizedBox(height: 8),
+          if (archived.isEmpty)
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          data['name']!,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(
-                                fontWeight: hasUnread
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                              ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        data['time']!,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: hasUnread ? KonectaColors.primary : null,
-                              fontWeight: hasUnread
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          data['msg']!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: hasUnread
-                                    ? FontWeight.w500
-                                    : FontWeight.w400,
-                              ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (hasUnread) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: KonectaColors.primary,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            data['unread']!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.archive_rounded, size: 48,
+                        color: KonectaColors.primary.withValues(alpha: 0.3)),
+                    const SizedBox(height: 12),
+                    Text('No hay chats archivados',
+                        style: GoogleFonts.inter(
+                            color: Colors.grey, fontSize: 14)),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                controller: sc,
+                itemCount: archived.length,
+                itemBuilder: (_, i) => _RealChatItem(
+                  chat: archived[i],
+                  onTap: () {
+                    Navigator.pop(bCtx);
+                    Navigator.of(ctx).push(MaterialPageRoute(
+                      builder: (_) => ChatScreen(chat: archived[i]),
+                    ));
+                  },
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
-    );
-  }
-
-  Color _avatarColor(int i) {
-    const colors = [
-      KonectaColors.primary,
-      KonectaColors.secondary,
-      KonectaColors.accent,
-      Color(0xFFEC4899),
-      Color(0xFFF59E0B),
-      Color(0xFF8B5CF6),
-    ];
-    return colors[i % colors.length];
-  }
+    ),
+  );
 }

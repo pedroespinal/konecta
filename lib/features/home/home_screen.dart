@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../../core/network/message_payload.dart';
 import '../../core/network/socket_client.dart';
 import '../../core/notifications/fcm_service.dart';
 import '../../core/services/update_checker.dart';
@@ -26,6 +28,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _selectedIndex = 0;
+  StreamSubscription? _msgSub;
 
   static const List<Widget> _tabs = [
     ChatsTab(),
@@ -46,11 +49,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    _msgSub?.cancel();
     ref.read(socketProvider.notifier).disconnect();
     super.dispose();
   }
 
-  /// Conecta el WebSocket relay con userId + FCM token del dispositivo.
+  /// Conecta el WebSocket relay y activa el listener global de mensajes entrantes.
   void _connectWebSocket() {
     final profile = ref.read(authProvider).profile;
     if (profile == null) return;
@@ -59,6 +63,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           profile.userId,
           fcmToken: FcmService.pendingFcmToken,
         );
+    _msgSub?.cancel();
+    _msgSub = ref
+        .read(socketProvider.notifier)
+        .messages
+        .listen(_onSocketMessage);
+  }
+
+  Future<void> _onSocketMessage(MessagePayload payload) async {
+    final myUserId = ref.read(authProvider).profile?.userId ?? '';
+    final sorted = [payload.from, myUserId]..sort();
+    final chatId = 'chat_${sorted.join('_')}';
+    try {
+      await ref.read(chatRepositoryProvider).receiveMessage(payload, chatId);
+      ref.invalidate(chatsProvider);
+    } catch (_) {}
   }
 
   /// Procesa mensajes recibidos via FCM cuando el usuario estaba offline,

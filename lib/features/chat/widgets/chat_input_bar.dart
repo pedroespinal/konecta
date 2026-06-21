@@ -1,5 +1,7 @@
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart' hide Config;
 import '../../../core/database/models/message_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../features/media/media_service.dart';
@@ -37,11 +39,29 @@ class _ChatInputBarState extends State<ChatInputBar> {
   final _controller = TextEditingController();
   final _focus = FocusNode();
   bool _hasText = false;
+  bool _showEmojiPicker = false;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
+    _focus.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (_focus.hasFocus && _showEmojiPicker) {
+      setState(() => _showEmojiPicker = false);
+    }
+  }
+
+  void _toggleEmojiPicker() {
+    if (_showEmojiPicker) {
+      setState(() => _showEmojiPicker = false);
+      _focus.requestFocus();
+    } else {
+      FocusManager.instance.primaryFocus?.unfocus();
+      setState(() => _showEmojiPicker = true);
+    }
   }
 
   @override
@@ -78,6 +98,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
+    _focus.removeListener(_onFocusChange);
     _controller.dispose();
     _focus.dispose();
     super.dispose();
@@ -86,9 +107,50 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? KonectaColors.darkSurface : KonectaColors.lightSurface;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Selector de emojis
+        Offstage(
+          offstage: !_showEmojiPicker,
+          child: SizedBox(
+            height: 256,
+            child: EmojiPicker(
+              textEditingController: _controller,
+              config: Config(
+                height: 256,
+                checkPlatformCompatibility: true,
+                emojiViewConfig: EmojiViewConfig(
+                  emojiSizeMax: 28 *
+                      (foundation.defaultTargetPlatform ==
+                              TargetPlatform.iOS
+                          ? 1.2
+                          : 1.0),
+                  backgroundColor: bg,
+                ),
+                categoryViewConfig: CategoryViewConfig(
+                  backgroundColor: bg,
+                  iconColor: isDark
+                      ? KonectaColors.darkTextSecondary
+                      : KonectaColors.lightTextSecondary,
+                  iconColorSelected: KonectaColors.primary,
+                  indicatorColor: KonectaColors.primary,
+                ),
+                bottomActionBarConfig: BottomActionBarConfig(
+                  backgroundColor: bg,
+                  buttonColor: KonectaColors.primary,
+                  buttonIconColor: Colors.white,
+                ),
+                searchViewConfig: SearchViewConfig(
+                  backgroundColor: bg,
+                  buttonIconColor: KonectaColors.primary,
+                ),
+              ),
+            ),
+          ),
+        ),
+
         // Banner de edición (tiene prioridad sobre reply)
         if (widget.editingMessage != null)
           _EditBanner(
@@ -122,13 +184,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // Emoji
+                // Emoji / Teclado
                 _BarButton(
-                  icon: Icons.emoji_emotions_outlined,
-                  onTap: () {
-                    widget.onEmoji?.call();
-                    _focus.requestFocus();
-                  },
+                  icon: _showEmojiPicker
+                      ? Icons.keyboard_rounded
+                      : Icons.emoji_emotions_outlined,
+                  onTap: _toggleEmojiPicker,
                 ),
 
                 // Campo de texto

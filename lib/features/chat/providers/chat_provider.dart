@@ -127,6 +127,11 @@ class ChatScreenNotifier extends StateNotifier<ChatScreenState> {
     );
   }
 
+  void addMessage(MessageModel msg) {
+    if (state.messages.any((m) => m.id == msg.id)) return;
+    state = state.copyWith(messages: [...state.messages, msg]);
+  }
+
   Future<void> deleteChat() => _repo.deleteChat(chatId);
 
   void setTyping(String? userId) {

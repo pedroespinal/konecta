@@ -14,6 +14,7 @@ import '../../../features/media/media_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/konecta_footer.dart';
 import '../providers/chat_provider.dart';
+import '../repositories/chat_repository.dart';
 import '../widgets/chat_input_bar.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/typing_indicator.dart';
@@ -28,16 +29,23 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
   MessageModel? _replyingTo;
   MessageModel? _editingMessage;
   int _disappearsInSeconds = 0;
+  bool _isMuted = false;
+  bool _showSearch = false;
+  String _searchQuery = '';
   StreamSubscription? _typingSubscription;
+  StreamSubscription? _msgSub;
 
   @override
   void initState() {
     super.initState();
+    _isMuted = widget.chat.isMuted;
     _scrollController.addListener(_onScroll);
     _listenToTyping();
+    _listenToMessages();
     _loadEphemeralPref();
   }
 
@@ -63,6 +71,31 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             .setTyping(event.isTyping ? event.from : null);
       }
     });
+  }
+
+  void _listenToMessages() {
+    final myUserId = ref.read(authProvider).profile?.userId ?? '';
+    final peer = _peerFromChatId(widget.chat.id, myUserId);
+    _msgSub = ref.read(socketProvider.notifier).messages.listen((payload) async {
+      if (payload.from != peer) return;
+      final msg = await ref
+          .read(chatRepositoryProvider)
+          .receiveMessage(payload, widget.chat.id);
+      if (msg != null && mounted) {
+        ref.read(chatScreenProvider(widget.chat.id).notifier).addMessage(msg);
+        Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
+      }
+    });
+  }
+
+  String _peerFromChatId(String chatId, String myUserId) {
+    if (!chatId.startsWith('chat_')) return chatId;
+    final inner = chatId.substring(5);
+    final mid = inner.indexOf('_');
+    if (mid < 0) return chatId;
+    final a = inner.substring(0, mid);
+    final b = inner.substring(mid + 1);
+    return a == myUserId ? b : a;
   }
 
   void _scrollToBottom({bool animated = true}) {
@@ -121,8 +154,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void dispose() {
+    _msgSub?.cancel();
     _typingSubscription?.cancel();
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -138,6 +173,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: _buildAppBar(isDark, state),
       body: Column(
         children: [
+          // Barra de búsqueda en chat
+          if (_showSearch)
+            _SearchBar(
+              controller: _searchController,
+              onChanged: (q) => setState(() => _searchQuery = q.toLowerCase()),
+              onClose: () => setState(() {
+                _showSearch = false;
+                _searchQuery = '';
+                _searchController.clear();
+              }),
+              isDark: isDark,
+            ),
+
           // Lista de mensajes
           Expanded(
             child: state.isLoading && state.messages.isEmpty
@@ -148,75 +196,93 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   )
                 : state.messages.isEmpty
                     ? _EmptyChat(chatName: widget.chat.name)
-                    : ListView.builder(
-                        controller: _scrollController,
-                        reverse: true, // más recientes abajo
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 0, vertical: 8),
-                        itemCount:
-                            state.messages.length + (state.hasMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == state.messages.length) {
-                            return state.isLoading
-                                ? const Padding(
-                                    padding: EdgeInsets.all(16),
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: KonectaColors.primary,
+                    : Builder(builder: (context) {
+                        final visible = _searchQuery.isEmpty
+                            ? state.messages
+                            : state.messages
+                                .where((m) =>
+                                    (m.decryptedContent ?? '')
+                                        .toLowerCase()
+                                        .contains(_searchQuery))
+                                .toList();
+                        if (visible.isEmpty && _searchQuery.isNotEmpty) {
+                          return Center(
+                            child: Text('Sin resultados para "$_searchQuery"',
+                                style: TextStyle(
+                                    color: isDark
+                                        ? KonectaColors.darkTextSecondary
+                                        : KonectaColors.lightTextSecondary)),
+                          );
+                        }
+                        return ListView.builder(
+                          controller: _scrollController,
+                          reverse: true,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 0, vertical: 8),
+                          itemCount:
+                              visible.length + (state.hasMore && _searchQuery.isEmpty ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == visible.length) {
+                              return state.isLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: KonectaColors.primary,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  )
-                                : const SizedBox.shrink();
-                          }
+                                    )
+                                  : const SizedBox.shrink();
+                            }
 
-                          // reversed: index 0 = el más reciente (abajo)
-                          final reversed =
-                              state.messages.reversed.toList();
-                          final msg = reversed[index];
-                          final isMine = msg.senderId == myUserId;
+                            final reversed = visible.reversed.toList();
+                            final msg = reversed[index];
+                            final isMine = msg.senderId == myUserId;
 
-                          // Buscar el mensaje al que responde
-                          MessageModel? replyMsg;
-                          if (msg.replyToId != null) {
-                            try {
-                              replyMsg = state.messages.firstWhere(
-                                (m) => m.id == msg.replyToId,
-                              );
-                            } catch (_) {}
-                          }
+                            MessageModel? replyMsg;
+                            if (msg.replyToId != null) {
+                              try {
+                                replyMsg = state.messages.firstWhere(
+                                  (m) => m.id == msg.replyToId,
+                                );
+                              } catch (_) {}
+                            }
 
-                          return MessageBubble(
-                            message: msg,
-                            isMine: isMine,
-                            showSender: widget.chat.type == ChatType.group,
-                            senderName: msg.senderId,
-                            replyTo: replyMsg,
-                            onReply: () =>
-                                setState(() => _replyingTo = msg),
-                            onDelete: () => ref
-                                .read(chatScreenProvider(widget.chat.id)
-                                    .notifier)
-                                .deleteMessage(msg.id),
-                            onReact: (emoji) => ref
-                                .read(chatScreenProvider(widget.chat.id)
-                                    .notifier)
-                                .reactTo(msg.id, emoji),
-                            onEdit: isMine ? () => setState(() {
-                                  _editingMessage = msg;
-                                  _replyingTo = null;
-                                }) : null,
-                            onStar: () => ref
-                                .read(chatScreenProvider(widget.chat.id)
-                                    .notifier)
-                                .starMessage(msg.id, !msg.isStarred),
-                          );
-                        },
-                      ),
+                            return MessageBubble(
+                              message: msg,
+                              isMine: isMine,
+                              showSender: widget.chat.type == ChatType.group,
+                              senderName: msg.senderId,
+                              replyTo: replyMsg,
+                              onReply: () =>
+                                  setState(() => _replyingTo = msg),
+                              onDelete: () => ref
+                                  .read(chatScreenProvider(widget.chat.id)
+                                      .notifier)
+                                  .deleteMessage(msg.id),
+                              onReact: (emoji) => ref
+                                  .read(chatScreenProvider(widget.chat.id)
+                                      .notifier)
+                                  .reactTo(msg.id, emoji),
+                              onEdit: isMine
+                                  ? () => setState(() {
+                                        _editingMessage = msg;
+                                        _replyingTo = null;
+                                      })
+                                  : null,
+                              onStar: () => ref
+                                  .read(chatScreenProvider(widget.chat.id)
+                                      .notifier)
+                                  .starMessage(msg.id, !msg.isStarred),
+                            );
+                          },
+                        );
+                      }),
           ),
 
           // Indicador de escritura
@@ -345,17 +411,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         PopupMenuButton<_ChatAction>(
           icon: const Icon(Icons.more_vert_rounded),
           itemBuilder: (_) => [
-            const PopupMenuItem(
+            PopupMenuItem(
                 value: _ChatAction.search,
-                child: Text('Buscar en chat')),
-            const PopupMenuItem(
-                value: _ChatAction.media, child: Text('Multimedia')),
-            const PopupMenuItem(
+                child: Row(children: [
+                  const Icon(Icons.search_rounded, size: 18),
+                  const SizedBox(width: 10),
+                  const Text('Buscar en chat'),
+                ])),
+            PopupMenuItem(
                 value: _ChatAction.mute,
-                child: Text('Silenciar notificaciones')),
-            const PopupMenuItem(
-                value: _ChatAction.wallpaper,
-                child: Text('Fondo de pantalla')),
+                child: Row(children: [
+                  Icon(_isMuted ? Icons.volume_up_rounded : Icons.volume_off_rounded, size: 18),
+                  const SizedBox(width: 10),
+                  Text(_isMuted ? 'Activar notificaciones' : 'Silenciar'),
+                ])),
             PopupMenuItem(
               value: _ChatAction.ephemeral,
               child: Row(
@@ -389,8 +458,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _confirmDeleteChat();
       case _ChatAction.ephemeral:
         _showEphemeralPicker();
-      default:
-        _showComingSoon(context, action.name);
+      case _ChatAction.search:
+        setState(() {
+          _showSearch = true;
+          _searchQuery = '';
+          _searchController.clear();
+        });
+      case _ChatAction.mute:
+        _toggleMute();
+    }
+  }
+
+  Future<void> _toggleMute() async {
+    final next = !_isMuted;
+    await ref.read(chatRepositoryProvider).toggleMute(widget.chat.id, next);
+    if (mounted) {
+      setState(() => _isMuted = next);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(next
+            ? 'Notificaciones silenciadas'
+            : 'Notificaciones activadas'),
+        duration: const Duration(seconds: 2),
+      ));
     }
   }
 
@@ -497,18 +586,66 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature — próximamente'),
-        backgroundColor: KonectaColors.primary,
-        duration: const Duration(seconds: 2),
+}
+
+enum _ChatAction { search, mute, ephemeral, delete }
+
+class _SearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClose;
+  final bool isDark;
+
+  const _SearchBar({
+    required this.controller,
+    required this.onChanged,
+    required this.onClose,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      color: isDark ? KonectaColors.darkSurface : KonectaColors.lightSurface,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              autofocus: true,
+              onChanged: onChanged,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Buscar en la conversación…',
+                prefixIcon: const Icon(Icons.search_rounded, size: 20,
+                    color: KonectaColors.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: isDark
+                    ? KonectaColors.darkSurface2
+                    : KonectaColors.lightSurface2,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                isDense: true,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close_rounded),
+            onPressed: onClose,
+            color: isDark
+                ? KonectaColors.darkTextSecondary
+                : KonectaColors.lightTextSecondary,
+          ),
+        ],
       ),
     );
   }
 }
-
-enum _ChatAction { search, media, mute, wallpaper, ephemeral, delete }
 
 class _EmptyChat extends StatelessWidget {
   final String chatName;

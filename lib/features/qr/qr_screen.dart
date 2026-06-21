@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/konecta_footer.dart';
 import '../auth/repositories/auth_repository.dart';
@@ -33,11 +34,9 @@ class QrScreen extends ConsumerWidget {
             icon: const Icon(Icons.share_rounded),
             tooltip: 'Compartir',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Compartir QR — próximamente'),
-                  duration: Duration(seconds: 2),
-                ),
+              Share.share(
+                'Agrégame en Konecta!\n$qrData',
+                subject: 'Mi código QR de Konecta',
               );
             },
           ),

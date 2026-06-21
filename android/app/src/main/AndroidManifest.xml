@@ -19,6 +19,8 @@
     <!-- FCM push notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
+    <!-- Contactos del directorio telefónico -->
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <application
         android:label="konecta"
         android:name="${applicationName}"
