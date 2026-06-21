@@ -1,5 +1,8 @@
 package com.pedroespinal.konecta
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
@@ -14,6 +17,29 @@ import java.io.File
 class MainActivity : FlutterFragmentActivity() {
 
     private val SECURITY_CHANNEL = "com.pedroespinal.konecta/security"
+
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        createNotificationChannel()
+    }
+
+    // Crea el canal de notificaciones "konecta_messages" en Android 8+.
+    // Sin este canal, FCM descarta silenciosamente todas las notificaciones.
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "konecta_messages",
+                "Mensajes de Konecta",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notificaciones de mensajes nuevos"
+                enableVibration(true)
+                enableLights(true)
+            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

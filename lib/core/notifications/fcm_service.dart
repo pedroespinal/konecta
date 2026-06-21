@@ -1,32 +1,39 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../router/app_router.dart';
 
-/// Handler de background — se ejecuta en isolate separado.
+// ─── Background handler (top-level, fuera de clase) ──────────────────────────
+// Firebase lo invoca en un Isolate separado cuando la app está CERRADA.
+// Android muestra la notificación automáticamente usando el campo "notification"
+// del mensaje FCM — no necesitamos hacer nada aquí.
 @pragma('vm:entry-point')
-Future<void> _onBackgroundMessage(RemoteMessage message) async {
-  // Firebase mostrará la notificación automáticamente (campo notification).
-  // El mensaje se guarda cuando el usuario toca y abre la app (onMessageOpenedApp).
+Future<void> onBackgroundMessage(RemoteMessage message) async {
   debugPrint('[FCM] background: ${message.notification?.title}');
 }
 
+// ─── Servicio ─────────────────────────────────────────────────────────────────
 class FcmService {
   FcmService._();
+
+  static const _relayBase = 'https://relay-production-38eb.up.railway.app';
 
   static final _messaging = FirebaseMessaging.instance;
 
   static Future<void> initialize() async {
+    // 1. Pedir permiso de notificaciones al usuario (Android 13+, iOS).
     await _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
-
-    // Foreground: cuando la app está abierta y llega un FCM
-    // (ocurre si el WebSocket se desconecta temporalmente)
+    // 2. Mensaje en primer plano (app abierta y WebSocket desconectado):
+    //    Firebase NO muestra notif automáticamente en foreground.
+    //    Aquí solo guardamos los datos; el WebSocket ya maneja el caso normal.
     FirebaseMessaging.onMessage.listen((message) {
       debugPrint('[FCM] foreground: ${message.notification?.title}');
       final data = message.data;
@@ -35,7 +42,7 @@ class FcmService {
       }
     });
 
-    // Notificación clickeada desde background
+    // 3. Notificación clickeada desde background (app estaba en background).
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       debugPrint('[FCM] opened from background: ${message.data}');
       final data = message.data;
@@ -47,8 +54,8 @@ class FcmService {
       appRouter.go(AppRoutes.home);
     });
 
-    // Cold start (app cerrada)
-    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    // 4. Cold start: app cerrada, usuario toca la notificación.
+    final initial = await _messaging.getInitialMessage();
     if (initial != null) {
       final data = initial.data;
       final chatId = data['chatId'] as String?;
@@ -58,15 +65,41 @@ class FcmService {
       }
     }
 
-    // FCM token del dispositivo
+    // 5. Obtener token FCM.
     final token = await _messaging.getToken();
     if (token != null) {
       debugPrint('[FCM] token: ${token.substring(0, 20)}...');
       _pendingToken = token;
     }
-    _messaging.onTokenRefresh.listen((t) => _pendingToken = t);
+
+    // 6. Renovación del token.
+    _messaging.onTokenRefresh.listen((t) {
+      debugPrint('[FCM] token refreshed: ${t.substring(0, 20)}...');
+      _pendingToken = t;
+    });
   }
 
+  // ── Registro HTTP del token en el relay ──────────────────────────────────
+  // Llama a /register-token para que el relay tenga el token aunque el
+  // WebSocket no esté conectado o el relay haya reiniciado en Railway.
+  static Future<void> registerTokenWithRelay(
+      String userId, String fcmToken) async {
+    try {
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 8);
+      final req =
+          await client.postUrl(Uri.parse('$_relayBase/register-token'));
+      req.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      req.write(jsonEncode({'userId': userId, 'fcmToken': fcmToken}));
+      final res = await req.close();
+      await res.drain<void>();
+      debugPrint('[FCM] token registrado en relay para $userId');
+    } catch (e) {
+      debugPrint('[FCM] error registrando token: $e');
+    }
+  }
+
+  // ── Estado estático ──────────────────────────────────────────────────────
   static String? _pendingToken;
   static String? get pendingFcmToken => _pendingToken;
 
@@ -74,8 +107,6 @@ class FcmService {
   static String? get pendingChatId => _pendingChatId;
   static void clearPendingChatId() => _pendingChatId = null;
 
-  /// Datos del mensaje FCM recibido (ciphertext, chatId, from, messageId, timestamp).
-  /// HomeScreen lo procesa al iniciarse para guardar el mensaje en la BD local.
   static Map<String, String>? _pendingMessageData;
   static Map<String, String>? get pendingMessageData => _pendingMessageData;
   static void clearPendingMessageData() => _pendingMessageData = null;

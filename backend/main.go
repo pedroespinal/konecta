@@ -25,6 +25,11 @@ func main() {
 		relay.ServeWS(hub, w, r)
 	})
 
+	// Registro de FCM token via HTTP — independiente del WebSocket.
+	// Flutter llama este endpoint al iniciar para garantizar que el relay
+	// tenga el token aunque el WebSocket no esté conectado o el relay haya reiniciado.
+	http.HandleFunc("/register-token", hub.HandleRegisterToken)
+
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok","service":"konecta-relay"}`))

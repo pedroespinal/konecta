@@ -58,11 +58,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _connectWebSocket() {
     final profile = ref.read(authProvider).profile;
     if (profile == null) return;
+
+    final fcmToken = FcmService.pendingFcmToken;
     ref.read(socketProvider.notifier).connect(
           profile.userId,
           profile.userId,
-          fcmToken: FcmService.pendingFcmToken,
+          fcmToken: fcmToken,
         );
+
+    // Registrar el token FCM en el relay también via HTTP, independientemente
+    // del WebSocket. Esto resuelve dos problemas:
+    // 1. Race condition: si el token FCM llegó después de la conexión WS.
+    // 2. Relay restart: el relay pierde los tokens en memoria al reiniciar.
+    if (fcmToken != null) {
+      FcmService.registerTokenWithRelay(profile.userId, fcmToken);
+    }
+
     _msgSub?.cancel();
     _msgSub = ref
         .read(socketProvider.notifier)

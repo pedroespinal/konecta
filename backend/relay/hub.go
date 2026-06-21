@@ -89,6 +89,33 @@ func (h *Hub) Run() {
 	}
 }
 
+// HandleRegisterToken es un endpoint HTTP POST /register-token que permite
+// a los clientes Flutter registrar su FCM token directamente via HTTP,
+// independientemente del WebSocket. Resuelve dos problemas:
+//   1. Race condition: el token FCM puede llegar después de la conexión WS.
+//   2. Relay restart: los tokens en memoria se pierden al reiniciar.
+func (h *Hub) HandleRegisterToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		UserID   string `json:"userId"`
+		FCMToken string `json:"fcmToken"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.UserID == "" || req.FCMToken == "" {
+		http.Error(w, "invalid request: userId y fcmToken requeridos", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	h.fcmTokens[req.UserID] = req.FCMToken
+	h.mu.Unlock()
+	log.Printf("[FCM] token registrado via HTTP para %s", req.UserID)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"ok":true}`))
+}
+
 // pushOfflineMessage envía un FCM push cuando el destinatario no está conectado.
 // Solo actúa para mensajes de texto (PayloadMessage).
 func (h *Hub) pushOfflineMessage(fcmToken string, data []byte) {

@@ -47,6 +47,17 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- FCM: canal de notificaciones por defecto (Android 8+).
+             Si la notificación llega ANTES de que la app cree el canal
+             programáticamente, Android usa este canal. Debe coincidir
+             con el ChannelID que envía el relay Go. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="konecta_messages" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

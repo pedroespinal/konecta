@@ -2,7 +2,7 @@ name: konecta
 description: "Konecta - Mensajeria segura y privada"
 publish_to: 'none'
 
-version: 1.2.0+17
+version: 1.2.0+18
 
 environment:
   sdk: ^3.11.5
@@ -79,6 +79,8 @@ dependencies:
 
   # Contactos del directorio telefónico
   flutter_contacts: ^1.1.9
+
+  # Canal de notificaciones creado nativo en MainActivity.kt
 
 dependency_overrides:
   # record_linux 0.7.2 no implementa record_platform_interface >=1.6.0

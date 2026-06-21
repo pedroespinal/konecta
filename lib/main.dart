@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Registrar handler de background ANTES de runApp.
+  // Firebase requiere que esto ocurra lo más temprano posible.
+  FirebaseMessaging.onBackgroundMessage(onBackgroundMessage);
+
   // Cargar preferencias persistidas (tema e idioma)
   final prefs = await SharedPreferences.getInstance();
   final savedThemeIndex = prefs.getInt('kc_theme_mode') ?? ThemeMode.system.index;
@@ -30,11 +35,13 @@ void main() async {
     statusBarColor: Colors.transparent,
   ));
 
-  // Push notifications (FCM)
-  unawaited(FcmService.initialize());
+  // Push notifications: crear canal Android + permisos + token.
+  // Se awaita para garantizar que el canal exista ANTES de que llegue
+  // cualquier notificación y que el token FCM esté listo.
+  await FcmService.initialize();
 
   // Verificaciones de seguridad en segundo plano
-  unawaited(IntegrityMonitor.runStartupChecks());
+  _unawaited(IntegrityMonitor.runStartupChecks());
 
   runApp(
     ProviderScope(
@@ -51,4 +58,4 @@ void main() async {
   );
 }
 
-void unawaited(Future<Object?> future) => future;
+void _unawaited(Future<Object?> future) => future;
