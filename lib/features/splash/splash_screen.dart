@@ -16,10 +16,13 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnim;
   late Animation<double> _scaleAnim;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseScale;
+  late Animation<double> _pulseOpacity;
 
   @override
   void initState() {
@@ -32,6 +35,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _scaleAnim = Tween<double>(begin: 0.75, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+    _pulseScale = Tween<double>(begin: 0.85, end: 1.6).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
+    );
+    _pulseOpacity = Tween<double>(begin: 0.55, end: 0.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeOut),
+    );
+
     _initialize();
   }
 
@@ -65,6 +80,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   void dispose() {
     _controller.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -84,7 +100,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const KonectaLogo(size: 96),
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            AnimatedBuilder(
+                              animation: _pulseController,
+                              builder: (_, __) => Opacity(
+                                opacity: _pulseOpacity.value,
+                                child: Transform.scale(
+                                  scale: _pulseScale.value,
+                                  child: Container(
+                                    width: 96,
+                                    height: 96,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: KonectaColors.primary,
+                                        width: 2.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const KonectaLogo(size: 96),
+                          ],
+                        ),
                         const SizedBox(height: 20),
                         ShaderMask(
                           shaderCallback: (bounds) => const LinearGradient(

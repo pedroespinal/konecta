@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
 abstract final class KonectaColors {
-  // ── Marca principal — Violeta Konecta ─────────────────────────────────────
-  static const Color primary = Color(0xFF7C3AED);       // Violet-600
-  static const Color primaryLight = Color(0xFFA78BFA);  // Violet-400
-  static const Color primaryDark = Color(0xFF6D28D9);   // Violet-700
+  // ── Marca principal — Cian Digital ──────────────────────────────────────
+  static const Color primary = Color(0xFF06B6D4);        // Cyan-500
+  static const Color primaryLight = Color(0xFF22D3EE);   // Cyan-400
+  static const Color primaryDark = Color(0xFF0891B2);    // Cyan-600
 
-  static const Color secondary = Color(0xFF8B5CF6);     // Violet-500
-  static const Color secondaryLight = Color(0xFFC4B5FD); // Violet-300
-  static const Color secondaryDark = Color(0xFF6D28D9);  // Violet-700
+  static const Color secondary = Color(0xFF0891B2);      // Cyan-600
+  static const Color secondaryLight = Color(0xFF67E8F9); // Cyan-300
+  static const Color secondaryDark = Color(0xFF0E7490);  // Cyan-700
 
-  static const Color accent = Color(0xFFA78BFA);        // Violet-400
+  static const Color accent = Color(0xFF22D3EE);         // Cyan-400
 
   // ── Estados ──────────────────────────────────────────────────────────────
   static const Color online = Color(0xFF10B981);
@@ -21,37 +21,37 @@ abstract final class KonectaColors {
   static const Color success = Color(0xFF10B981);
 
   // ── Burbujas de chat ─────────────────────────────────────────────────────
-  static const Color bubbleSentDark = Color(0xFF1D0D40);    // Violeta oscuro profundo
-  static const Color bubbleReceivedDark = Color(0xFF1A1A26);
-  static const Color bubbleSentLight = Color(0xFF7C3AED);   // Violeta primario
-  static const Color bubbleReceivedLight = Color(0xFFF5F3FF);
+  static const Color bubbleSentDark = Color(0xFF013340);    // Cian oscuro profundo
+  static const Color bubbleReceivedDark = Color(0xFF0A1A1E);
+  static const Color bubbleSentLight = Color(0xFF06B6D4);   // Cian primario
+  static const Color bubbleReceivedLight = Color(0xFFE0F9FC);
 
   // ── Modo OSCURO ───────────────────────────────────────────────────────────
-  static const Color darkBackground = Color(0xFF07060F);  // Casi negro con tono violeta
-  static const Color darkSurface = Color(0xFF0E0B1A);
-  static const Color darkSurface2 = Color(0xFF160F28);
-  static const Color darkSurface3 = Color(0xFF1E1436);
-  static const Color darkSurface4 = Color(0xFF261844);
+  static const Color darkBackground = Color(0xFF020B0E);  // Casi negro con tono cian
+  static const Color darkSurface = Color(0xFF05141A);
+  static const Color darkSurface2 = Color(0xFF071E27);
+  static const Color darkSurface3 = Color(0xFF0A2733);
+  static const Color darkSurface4 = Color(0xFF0D3040);
 
-  // Texto dark mode — WCAG AA/AAA compliant sobre #07060F
-  static const Color darkTextPrimary = Color(0xFFECF0FC);    // ~18:1 contrast
-  static const Color darkTextSecondary = Color(0xFFB0A8D0);  // ~8:1 contrast ✓
-  static const Color darkTextTertiary = Color(0xFF6D6390);   // ~4.5:1 contrast ✓
+  // Texto dark mode — WCAG AA/AAA compliant sobre #020B0E
+  static const Color darkTextPrimary = Color(0xFFE0F9FC);    // ~18:1 contrast
+  static const Color darkTextSecondary = Color(0xFFA8D8E0);  // ~8:1 contrast ✓
+  static const Color darkTextTertiary = Color(0xFF537A80);   // ~4.5:1 contrast ✓
 
-  static const Color darkDivider = Color(0xFF1E1436);
-  static const Color darkBorder = Color(0xFF2D1F50);
+  static const Color darkDivider = Color(0xFF0A2733);
+  static const Color darkBorder = Color(0xFF163D4A);
 
   // ── Modo CLARO ────────────────────────────────────────────────────────────
-  static const Color lightBackground = Color(0xFFF5F3FF);   // Violet-50
+  static const Color lightBackground = Color(0xFFE0F9FC);   // Cyan-50
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurface2 = Color(0xFFEDE9FE);     // Violet-100
-  static const Color lightSurface3 = Color(0xFFDDD6FE);     // Violet-200
-  static const Color lightSurface4 = Color(0xFFC4B5FD);     // Violet-300
+  static const Color lightSurface2 = Color(0xFFCFFAFE);     // Cyan-100
+  static const Color lightSurface3 = Color(0xFFA5F3FC);     // Cyan-200
+  static const Color lightSurface4 = Color(0xFF67E8F9);     // Cyan-300
 
-  static const Color lightTextPrimary = Color(0xFF1A0A33);   // Casi negro con tono violeta
+  static const Color lightTextPrimary = Color(0xFF0A2733);   // Casi negro con tono cian
   static const Color lightTextSecondary = Color(0xFF374151); // Gris oscuro
   static const Color lightTextTertiary = Color(0xFF6B7280);  // Gris medio
 
-  static const Color lightDivider = Color(0xFFEDE9FE);
-  static const Color lightBorder = Color(0xFFDDD6FE);
+  static const Color lightDivider = Color(0xFFCFFAFE);
+  static const Color lightBorder = Color(0xFFA5F3FC);
 }

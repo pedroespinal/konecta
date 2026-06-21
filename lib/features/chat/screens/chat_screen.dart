@@ -186,9 +186,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               isDark: isDark,
             ),
 
-          // Lista de mensajes
+          // Lista de mensajes con fondo de patrón sutil
           Expanded(
-            child: state.isLoading && state.messages.isEmpty
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _ChatPatternPainter(isDark: isDark),
+                  ),
+                ),
+                Builder(builder: (context) => state.isLoading && state.messages.isEmpty
                 ? const Center(
                     child: CircularProgressIndicator(
                       color: KonectaColors.primary,
@@ -283,6 +290,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           },
                         );
                       }),
+              ),
+              ],
+            ),
           ),
 
           // Indicador de escritura
@@ -322,20 +332,39 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       title: Row(
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: KonectaColors.primary.withValues(alpha: 0.15),
-            backgroundImage: widget.chat.avatarPath != null
-                ? AssetImage(widget.chat.avatarPath!)
-                : null,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: widget.chat.avatarPath == null
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        KonectaColors.primaryLight,
+                        KonectaColors.primaryDark,
+                      ],
+                    )
+                  : null,
+              image: widget.chat.avatarPath != null
+                  ? DecorationImage(
+                      image: AssetImage(widget.chat.avatarPath!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
             child: widget.chat.avatarPath == null
-                ? Text(
-                    widget.chat.name.isNotEmpty
-                        ? widget.chat.name[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: KonectaColors.primary,
+                ? Center(
+                    child: Text(
+                      widget.chat.name.isNotEmpty
+                          ? widget.chat.name[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
                     ),
                   )
                 : null,
@@ -645,6 +674,27 @@ class _SearchBar extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ChatPatternPainter extends CustomPainter {
+  final bool isDark;
+  const _ChatPatternPainter({required this.isDark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF06B6D4).withValues(alpha: isDark ? 0.045 : 0.07)
+      ..style = PaintingStyle.fill;
+    const spacing = 26.0;
+    for (double x = 0; x < size.width + spacing; x += spacing) {
+      for (double y = 0; y < size.height + spacing; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 1.8, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ChatPatternPainter old) => old.isDark != isDark;
 }
 
 class _EmptyChat extends StatelessWidget {

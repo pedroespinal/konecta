@@ -234,11 +234,14 @@ class ChatsTab extends ConsumerWidget {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final chat = chats[index];
-                  return _RealChatItem(
-                    chat: chat,
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (_) => ChatScreen(chat: chat)),
+                  return _AnimatedChatItem(
+                    index: index,
+                    child: _RealChatItem(
+                      chat: chat,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => ChatScreen(chat: chat)),
+                      ),
                     ),
                   );
                 },
@@ -276,20 +279,41 @@ class _RealChatItem extends StatelessWidget {
           children: [
             // Avatar
             Stack(
+              clipBehavior: Clip.none,
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: KonectaColors.primary.withValues(alpha: 0.15),
-                  backgroundImage: chat.avatarPath != null
-                      ? AssetImage(chat.avatarPath!)
-                      : null,
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: chat.avatarPath == null
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              KonectaColors.primaryLight,
+                              KonectaColors.primaryDark,
+                            ],
+                          )
+                        : null,
+                    image: chat.avatarPath != null
+                        ? DecorationImage(
+                            image: AssetImage(chat.avatarPath!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
                   child: chat.avatarPath == null
-                      ? Text(
-                          chat.name.isNotEmpty ? chat.name[0].toUpperCase() : '?',
-                          style: const TextStyle(
-                            color: KonectaColors.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 18,
+                      ? Center(
+                          child: Text(
+                            chat.name.isNotEmpty
+                                ? chat.name[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 20,
+                            ),
                           ),
                         )
                       : null,
@@ -425,6 +449,58 @@ class _RealChatItem extends StatelessWidget {
     } else {
       return '${dt.day}/${dt.month}';
     }
+  }
+}
+
+class _AnimatedChatItem extends StatefulWidget {
+  final int index;
+  final Widget child;
+  const _AnimatedChatItem({required this.index, required this.child});
+
+  @override
+  State<_AnimatedChatItem> createState() => _AnimatedChatItemState();
+}
+
+class _AnimatedChatItemState extends State<_AnimatedChatItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.12),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    final delay = widget.index < 8 ? widget.index * 45 : 360;
+    if (delay == 0) {
+      _ctrl.forward();
+    } else {
+      Future.delayed(Duration(milliseconds: delay), () {
+        if (mounted) _ctrl.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
   }
 }
 

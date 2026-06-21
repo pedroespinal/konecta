@@ -145,27 +145,12 @@ class MessageBubble extends StatelessWidget {
                       ),
                     ),
 
-                    // Reaccion (emoji)
+                    // Reaccion (emoji) con animacion pop
                     if (message.reactionEmoji != null)
-                      Container(
-                        margin: const EdgeInsets.only(top: 2, right: 4, left: 4),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? KonectaColors.darkSurface3
-                              : KonectaColors.lightSurface3,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: isDark
-                                ? KonectaColors.darkBorder
-                                : KonectaColors.lightBorder,
-                          ),
-                        ),
-                        child: Text(
-                          message.reactionEmoji!,
-                          style: const TextStyle(fontSize: 14),
-                        ),
+                      _ReactionBadge(
+                        key: ValueKey('reaction_${message.id}_${message.reactionEmoji}'),
+                        emoji: message.reactionEmoji!,
+                        isDark: isDark,
                       ),
                   ],
                 ),
@@ -223,28 +208,102 @@ class _BubbleContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isMine
-        ? KonectaColors.primary
-        : (isDark ? KonectaColors.darkSurface2 : KonectaColors.lightSurface);
+    final radius = BorderRadius.only(
+      topLeft: const Radius.circular(18),
+      topRight: const Radius.circular(18),
+      bottomLeft: Radius.circular(isMine ? 18 : 4),
+      bottomRight: Radius.circular(isMine ? 4 : 18),
+    );
     return Container(
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(18),
-          topRight: const Radius.circular(18),
-          bottomLeft: Radius.circular(isMine ? 18 : 4),
-          bottomRight: Radius.circular(isMine ? 4 : 18),
-        ),
+        gradient: isMine
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [KonectaColors.primaryLight, KonectaColors.primaryDark],
+              )
+            : null,
+        color: isMine
+            ? null
+            : (isDark ? KonectaColors.darkSurface2 : KonectaColors.lightSurface),
+        borderRadius: radius,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 4,
+            color: (isMine ? KonectaColors.primary : Colors.black)
+                .withValues(alpha: isMine ? 0.25 : 0.06),
+            blurRadius: isMine ? 8 : 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       child: child,
+    );
+  }
+}
+
+class _ReactionBadge extends StatefulWidget {
+  final String emoji;
+  final bool isDark;
+  const _ReactionBadge({super.key, required this.emoji, required this.isDark});
+
+  @override
+  State<_ReactionBadge> createState() => _ReactionBadgeState();
+}
+
+class _ReactionBadgeState extends State<_ReactionBadge>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: 1.35)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 55,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.35, end: 1.0)
+            .chain(CurveTween(curve: Curves.elasticIn)),
+        weight: 45,
+      ),
+    ]).animate(_ctrl);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scale,
+      child: Container(
+        margin: const EdgeInsets.only(top: 2, right: 4, left: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: widget.isDark
+              ? KonectaColors.darkSurface3
+              : KonectaColors.lightSurface3,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: widget.isDark
+                ? KonectaColors.darkBorder
+                : KonectaColors.lightBorder,
+          ),
+        ),
+        child: Text(widget.emoji, style: const TextStyle(fontSize: 14)),
+      ),
     );
   }
 }
