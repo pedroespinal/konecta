@@ -137,7 +137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           Expanded(child: _tabs[_selectedIndex]),
           const Divider(height: 0.5),
-          const KonectaFooter(showVersion: false),
+          const KonectaFooter(showVersion: true),
         ],
       ),
       bottomNavigationBar: NavigationBar(

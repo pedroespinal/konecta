@@ -293,6 +293,7 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **1.2.0+16** | jun 2026 | **Versión visible**: chip de versión en el app bar de Chats + footer activado; **Guía de usuario** integrada en la app (menú ⋮ → Guía de usuario, también en Ajustes → Acerca de) con 6 secciones: Mensajes, Contactos, Llamadas, Seguridad, Ajustes y Acerca de |
 | **1.2.0+15** | jun 2026 | **Mensajes funcionando**: corrección de enrutamiento WebSocket y clave de cifrado simétrica compartida; **selector de emojis** en el chat; **compartir QR** con share sheet nativo; **directorio telefónico** en pestaña Contactos con botón Invitar; chats archivados en bottom sheet; lista de chats vacía sin datos de demostración |
 | **1.2.0+14** | jun 2026 | **Relay en producción** (Railway); WebSocket activo desde HomeScreen; FCM push offline con Firebase Admin SDK; URL real del relay configurada |
 | **1.2.0+13** | jun 2026 | **Violeta Konecta** (nueva identidad); **PIN de pánico** (modo decoy); backend Railway listo; FCM push notifications |

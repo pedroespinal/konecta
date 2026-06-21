@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../app.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/router/app_router.dart';
+import '../guide/guide_screen.dart';
 import '../../core/theme/app_colors.dart';
 import '../../features/auth/repositories/auth_repository.dart';
 
@@ -634,6 +635,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             isDark: isDark,
             child: Column(
               children: [
+                _SettingsTile(
+                  icon: Icons.auto_stories_rounded,
+                  iconColor: KonectaColors.primary,
+                  title: 'Guía de usuario',
+                  subtitle: 'Aprende a usar todas las funciones de Konecta',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const GuideScreen()),
+                  ),
+                ),
+                _Divider(isDark: isDark),
                 _SettingsTile(
                   icon: Icons.info_outline_rounded,
                   iconColor: KonectaColors.accent,

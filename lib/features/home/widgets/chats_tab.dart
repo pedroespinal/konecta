@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/constants/app_version.dart';
 import '../../../core/database/daos/chats_dao.dart';
 import '../../../core/database/models/chat_model.dart';
 import '../../../core/l10n/app_localizations.dart';
@@ -11,6 +12,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../features/chat/providers/chat_provider.dart';
 import '../../../features/chat/screens/chat_screen.dart';
 import '../../../features/chat/screens/new_chat_screen.dart';
+import '../../../features/guide/guide_screen.dart';
 import '../screens/chat_search_screen.dart';
 
 class ChatsTab extends ConsumerWidget {
@@ -27,7 +29,32 @@ class ChatsTab extends ConsumerWidget {
         SliverAppBar(
           floating: true,
           snap: true,
-          title: Text(l10n.navChats),
+          title: Row(
+            children: [
+              Text(l10n.navChats),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: KonectaColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: KonectaColors.primary.withValues(alpha: 0.25),
+                    width: 0.5,
+                  ),
+                ),
+                child: Text(
+                  AppVersion.fullVersion,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: KonectaColors.primary,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.qr_code_rounded),
@@ -67,6 +94,10 @@ class ChatsTab extends ConsumerWidget {
                     );
                   case 'settings':
                     context.push(AppRoutes.settings);
+                  case 'guide':
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const GuideScreen()),
+                    );
                 }
               },
               itemBuilder: (ctx) {
@@ -100,6 +131,15 @@ class ChatsTab extends ConsumerWidget {
                     ]),
                   ),
                   const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'guide',
+                    child: Row(children: [
+                      const Icon(Icons.auto_stories_rounded, size: 20),
+                      const SizedBox(width: 12),
+                      Text('Guía de usuario',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+                    ]),
+                  ),
                   PopupMenuItem(
                     value: 'settings',
                     child: Row(children: [
