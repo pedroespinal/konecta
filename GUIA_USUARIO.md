@@ -1,7 +1,7 @@
 # Guía de Usuario — Konecta v1.2.0
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.2.0 (build 14) — 19 de junio de 2026
+**Versión:** 1.2.0 (build 19) — 22 de junio de 2026
 
 ---
 
@@ -17,29 +17,11 @@ Konecta es una aplicación de mensajería segura y privada con cifrado de extrem
 
 Al abrir Konecta por primera vez, verás la pantalla de registro.
 
-**Opción A — Número de teléfono:**
-1. Selecciona tu país con el selector de bandera
-2. Escribe tu número de teléfono
-3. Acepta los Términos de servicio y Política de privacidad
-4. Toca **Continuar**
-5. Ingresa el código de verificación de 6 dígitos (ver nota demo)
+1. Escribe tu nombre de usuario (mínimo 3 caracteres, solo letras, números, puntos y guiones bajos)
+2. Acepta los Términos de servicio y Política de privacidad
+3. Toca **Continuar**
 
-**Opción B — Solo usuario (mayor privacidad):**
-1. Elige la pestaña "Solo usuario"
-2. Escribe un nombre de usuario (mínimo 3 caracteres, solo letras, números, puntos y guiones bajos)
-3. Acepta los términos y toca **Continuar**
-4. No se requiere número de teléfono
-
-> **Nota demo:** En esta versión, el envío de SMS real aún no está activo. Puedes usar **cualquier código de 6 dígitos** para avanzar.
-
----
-
-### 2. Verificación OTP
-
-Si elegiste registro con número de teléfono:
-- Ingresa el código de 6 dígitos
-- **Modo demo:** cualquier código de 6 dígitos funciona
-- Si el código expira, toca **Reenviar código** después de 60 segundos
+> **Privacidad:** Konecta no requiere número de teléfono. Ningún dato tuyo se comparte con terceros.
 
 ---
 
@@ -293,6 +275,8 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **1.2.0+19** | jun 2026 | **4 bugs críticos corregidos**: OTP fake eliminado (registro solo por usuario); historial de llamadas real en SQLite (con swipe para borrar); certificate pinning con SHA-256 correcto; claves E2E publicadas al relay al registrar |
+| **1.2.0+18** | jun 2026 | Canal Android konecta_messages para FCM; registro HTTP del token FCM en el relay; Cian Digital (paleta + animaciones) |
 | **1.2.0+16** | jun 2026 | **Versión visible**: chip de versión en el app bar de Chats + footer activado; **Guía de usuario** integrada en la app (menú ⋮ → Guía de usuario, también en Ajustes → Acerca de) con 6 secciones: Mensajes, Contactos, Llamadas, Seguridad, Ajustes y Acerca de |
 | **1.2.0+15** | jun 2026 | **Mensajes funcionando**: corrección de enrutamiento WebSocket y clave de cifrado simétrica compartida; **selector de emojis** en el chat; **compartir QR** con share sheet nativo; **directorio telefónico** en pestaña Contactos con botón Invitar; chats archivados en bottom sheet; lista de chats vacía sin datos de demostración |
 | **1.2.0+14** | jun 2026 | **Relay en producción** (Railway); WebSocket activo desde HomeScreen; FCM push offline con Firebase Admin SDK; URL real del relay configurada |
