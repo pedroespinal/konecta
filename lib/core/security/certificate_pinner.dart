@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/foundation.dart';
 
 // Certificate pinning para el servidor relay de Konecta.
@@ -15,8 +15,8 @@ abstract final class CertificatePinner {
   static const _pinnedSha256 =
       'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
-  // Relay host para validar solo conexiones a nuestro servidor
-  static const _relayHost = 'relay.konecta.app';
+  // Relay host — Railway production
+  static const _relayHost = 'relay-production-38eb.up.railway.app';
 
   // Crear HttpClient con certificate pinning habilitado
   static HttpClient createHttpClient() {
@@ -49,13 +49,8 @@ abstract final class CertificatePinner {
     return false;
   }
 
-  // SHA-256 simplificado usando dart:convert (sin dependencias)
   static String _sha256Hex(List<int> data) {
-    // Nota: dart:convert no incluye SHA-256 nativo.
-    // En producción, usar package:crypto: crypto.sha256.convert(data).toString()
-    // Aquí retornamos un placeholder hasta que se configure el cert real.
-    // TODO: agregar package:crypto a pubspec.yaml y reemplazar esta implementación
-    return base64.encode(data).replaceAll('=', '').toLowerCase();
+    return crypto.sha256.convert(data).toString();
   }
 
   // Verificar conectividad y pin del relay

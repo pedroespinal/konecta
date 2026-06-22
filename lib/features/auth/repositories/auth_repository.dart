@@ -1,8 +1,7 @@
-// Repositorio de autenticacion.
-// Coordina el flujo de registro/login con las claves criptograficas locales.
-// La conexion real al servidor relay se implementa en Fase 3.
-
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/security/crypto/konecta_crypto.dart';
 import '../../../core/security/crypto/secure_key_store.dart';
@@ -101,7 +100,8 @@ class AuthRepository extends StateNotifier<AuthState> {
         isLoading: false,
       );
 
-      // TODO Fase 3: subir claves publicas al servidor relay
+      // Publicar claves públicas al relay (best-effort, no bloquea el registro)
+      _publishKeysToRelay(identity);
       return identity;
     } catch (e) {
       state = state.copyWith(
@@ -168,6 +168,59 @@ class AuthRepository extends StateNotifier<AuthState> {
   Future<void> deleteAccount() async {
     await SecureKeyStore.deleteAllKeys();
     state = const AuthState(status: AuthStatus.unauthenticated);
+  }
+
+  static const _relayBase = 'https://relay-production-38eb.up.railway.app';
+
+  Future<void> _publishKeysToRelay(KonectaIdentity identity) async {
+    try {
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 10);
+      final req =
+          await client.postUrl(Uri.parse('$_relayBase/publish-keys'));
+      req.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      req.write(jsonEncode(identity.toJson()));
+      final res = await req.close();
+      await res.drain<void>();
+      debugPrint('[AUTH] claves publicadas en relay para ${identity.userId}');
+    } catch (e) {
+      debugPrint('[AUTH] no se pudo publicar claves (se reintentará en login): $e');
+    }
+  }
+
+  // Republicar claves al relay si el relay las perdió (ej. reinicio en Railway)
+  Future<void> republishKeysIfNeeded() async {
+    try {
+      final profile = state.profile;
+      if (profile == null) return;
+      final identityPubHex =
+          await SecureKeyStore.readKey('identity_public') ?? '';
+      if (identityPubHex.isEmpty) return;
+
+      // Chequear si el relay ya las tiene
+      final check = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+      final checkReq = await check
+          .getUrl(Uri.parse('$_relayBase/keys/${profile.userId}'));
+      final checkRes = await checkReq.close();
+      await checkRes.drain<void>();
+      if (checkRes.statusCode == 200) return;
+
+      // Republicar
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 10);
+      final req =
+          await client.postUrl(Uri.parse('$_relayBase/publish-keys'));
+      req.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+      req.write(jsonEncode({
+        'userId': profile.userId,
+        'identityPublicKey': identityPubHex,
+      }));
+      final res = await req.close();
+      await res.drain<void>();
+      debugPrint('[AUTH] claves republicadas para ${profile.userId}');
+    } catch (e) {
+      debugPrint('[AUTH] republish error: $e');
+    }
   }
 
   String _generateUserId() {

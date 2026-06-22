@@ -1,4 +1,3 @@
-import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,59 +15,37 @@ class RegisterScreen extends ConsumerStatefulWidget {
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final _phoneController = TextEditingController();
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _usernameController = TextEditingController();
-  String _countryCode = '+1';
   bool _agreeToTerms = false;
 
   @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
-    _phoneController.dispose();
     _usernameController.dispose();
     super.dispose();
   }
 
-  bool get _canContinue {
-    if (!_agreeToTerms) return false;
-    if (_tabController.index == 0) {
-      return _phoneController.text.length >= 7;
-    } else {
-      final u = _usernameController.text.trim();
-      return u.length >= 3 && RegExp(r'^[a-zA-Z0-9_.]+$').hasMatch(u);
-    }
+  bool get _isUsernameValid {
+    final u = _usernameController.text.trim();
+    return u.length >= 3 && RegExp(r'^[a-zA-Z0-9_.]+$').hasMatch(u);
   }
+
+  bool get _canContinue => _agreeToTerms && _isUsernameValid;
 
   void _onContinue() {
     if (!_canContinue) return;
-    if (_tabController.index == 0) {
-      // Con numero de telefono → OTP
-      context.push(AppRoutes.otp, extra: '$_countryCode${_phoneController.text.trim()}');
-    } else {
-      // Solo nombre de usuario → saltar OTP, ir a perfil
-      context.push(AppRoutes.profileSetup, extra: _usernameController.text.trim());
-    }
+    context.push(AppRoutes.profileSetup,
+        extra: _usernameController.text.trim());
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface2 = isDark ? KonectaColors.darkSurface2 : KonectaColors.lightSurface2;
+    final val = _usernameController.text.trim();
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
               child: Row(
@@ -104,7 +81,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Elige cómo quieres registrarte',
+                      'Elige tu nombre de usuario',
                       style: GoogleFonts.inter(
                         fontSize: 15,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -112,60 +89,86 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                     ),
                     const SizedBox(height: 28),
 
-                    // Tabs: Teléfono / Solo usuario
-                    Container(
-                      decoration: BoxDecoration(
-                        color: surface2,
-                        borderRadius: BorderRadius.circular(12),
+                    Text(
+                      'Nombre de usuario',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      child: TabBar(
-                        controller: _tabController,
-                        onTap: (_) => setState(() {}),
-                        indicator: BoxDecoration(
-                          color: KonectaColors.primary,
-                          borderRadius: BorderRadius.circular(10),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _usernameController,
+                      onChanged: (_) => setState(() {}),
+                      autocorrect: false,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-Z0-9_.]')),
+                      ],
+                      style: GoogleFonts.inter(fontSize: 16),
+                      decoration: InputDecoration(
+                        hintText: 'ej: pedro.espinal',
+                        prefixIcon: const Icon(
+                            Icons.alternate_email_rounded,
+                            size: 20),
+                        suffixIcon: val.isNotEmpty
+                            ? Icon(
+                                _isUsernameValid
+                                    ? Icons.check_circle_rounded
+                                    : Icons.error_outline_rounded,
+                                color: _isUsernameValid
+                                    ? KonectaColors.accent
+                                    : KonectaColors.error,
+                                size: 20,
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Solo letras, números, puntos y guiones bajos. Mínimo 3 caracteres.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Privacidad
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: KonectaColors.accent.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: KonectaColors.accent.withValues(alpha: 0.2),
                         ),
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        labelColor: Colors.white,
-                        unselectedLabelColor:
-                            Theme.of(context).colorScheme.onSurfaceVariant,
-                        labelStyle: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        dividerColor: Colors.transparent,
-                        tabs: const [
-                          Tab(text: 'Número de teléfono'),
-                          Tab(text: 'Solo usuario'),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.shield_rounded,
+                            color: KonectaColors.accent,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Sin número de teléfono — mayor privacidad. '
+                              'Konecta no recopila ni vende tus datos.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: KonectaColors.accent,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-                    // Contenido según tab
-                    AnimatedBuilder(
-                      animation: _tabController,
-                      builder: (context, _) {
-                        if (_tabController.index == 0) {
-                          return _PhoneInput(
-                            controller: _phoneController,
-                            countryCode: _countryCode,
-                            onCountryChanged: (code) =>
-                                setState(() => _countryCode = code),
-                            onChanged: (_) => setState(() {}),
-                          );
-                        } else {
-                          return _UsernameInput(
-                            controller: _usernameController,
-                            onChanged: (_) => setState(() {}),
-                          );
-                        }
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Terminos y condiciones
+                    // Términos
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -215,40 +218,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
                           ),
                         ),
                       ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    // Nota de privacidad
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: KonectaColors.accent.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: KonectaColors.accent.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.shield_rounded,
-                            color: KonectaColors.accent,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Konecta no recopila ni vende tus datos. Tu número '
-                              'nunca se comparte con terceros.',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: KonectaColors.accent,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
 
                     const SizedBox(height: 28),
@@ -308,151 +277,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PhoneInput extends StatelessWidget {
-  final TextEditingController controller;
-  final String countryCode;
-  final ValueChanged<String> onCountryChanged;
-  final ValueChanged<String> onChanged;
-
-  const _PhoneInput({
-    required this.controller,
-    required this.countryCode,
-    required this.onCountryChanged,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Número de teléfono',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            // Country code picker
-            Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? KonectaColors.darkSurface2
-                    : KonectaColors.lightSurface2,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: CountryCodePicker(
-                onChanged: (c) => onCountryChanged(c.dialCode ?? '+1'),
-                initialSelection: 'US',
-                showCountryOnly: false,
-                showOnlyCountryWhenClosed: false,
-                alignLeft: false,
-                textStyle: GoogleFonts.inter(
-                  fontSize: 15,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                onChanged: onChanged,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: GoogleFonts.inter(fontSize: 16),
-                decoration: InputDecoration(
-                  hintText: 'Número de teléfono',
-                  prefixText: '$countryCode ',
-                  prefixStyle: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: KonectaColors.primary,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Te enviaremos un código de verificación por SMS.',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _UsernameInput extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-  const _UsernameInput({required this.controller, required this.onChanged});
-
-  bool _isValid(String v) =>
-      v.length >= 3 && RegExp(r'^[a-zA-Z0-9_.]+$').hasMatch(v);
-
-  @override
-  Widget build(BuildContext context) {
-    final val = controller.text.trim();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Nombre de usuario',
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          onChanged: onChanged,
-          autocorrect: false,
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_.]')),
-          ],
-          style: GoogleFonts.inter(fontSize: 16),
-          decoration: InputDecoration(
-            hintText: 'ej: pedro.espinal',
-            prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20),
-            suffixIcon: val.isNotEmpty
-                ? Icon(
-                    _isValid(val)
-                        ? Icons.check_circle_rounded
-                        : Icons.error_outline_rounded,
-                    color: _isValid(val)
-                        ? KonectaColors.accent
-                        : KonectaColors.error,
-                    size: 20,
-                  )
-                : null,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Solo letras, números, puntos y guiones bajos. Mínimo 3 caracteres.\n'
-          'Sin número de teléfono — mayor privacidad.',
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
     );
   }
 }

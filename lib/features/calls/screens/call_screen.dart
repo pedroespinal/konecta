@@ -106,12 +106,17 @@ class _CallScreenState extends ConsumerState<CallScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) => _startTimer());
     }
 
-    // Cerrar pantalla si la llamada termino
-    if (webRTC.activeCall?.status == CallStatus.ended ||
-        webRTC.activeCall?.status == CallStatus.rejected ||
-        webRTC.activeCall?.status == CallStatus.failed) {
+    // Cerrar pantalla si la llamada terminó — pasar resultado al caller
+    final endStatus = webRTC.activeCall?.status;
+    if (endStatus == CallStatus.ended ||
+        endStatus == CallStatus.rejected ||
+        endStatus == CallStatus.failed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.of(context).pop();
+        if (!mounted) return;
+        Navigator.of(context).pop(<String, dynamic>{
+          'durationSeconds': _elapsed.inSeconds,
+          'status': endStatus!.name,
+        });
       });
     }
 
@@ -214,7 +219,10 @@ class _CallScreenState extends ConsumerState<CallScreen>
                 final myId =
                     ref.read(authProvider).profile?.userId ?? '';
                 ref.read(webRTCProvider.notifier).endCall(myId: myId);
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(<String, dynamic>{
+                  'durationSeconds': _elapsed.inSeconds,
+                  'status': 'ended',
+                });
               },
             ),
           ),

@@ -3,7 +3,9 @@ package relay
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/pedroespinal/konecta-relay/fcm"
@@ -20,8 +22,9 @@ type routeMsg struct {
 // Nunca almacena mensajes ni descifra ciphertext — solo reenvía.
 type Hub struct {
 	mu         sync.RWMutex
-	clients    map[string]*Client // userID -> Client activo
-	fcmTokens  map[string]string  // userID -> FCM token (persiste tras desconexión)
+	clients    map[string]*Client       // userID -> Client activo
+	fcmTokens  map[string]string        // userID -> FCM token (persiste tras desconexión)
+	publicKeys map[string]json.RawMessage // userID -> bundle de claves públicas Signal
 	register   chan *Client
 	unregister chan *Client
 	route      chan routeMsg
@@ -31,6 +34,7 @@ func NewHub() *Hub {
 	return &Hub{
 		clients:    make(map[string]*Client),
 		fcmTokens:  make(map[string]string),
+		publicKeys: make(map[string]json.RawMessage),
 		register:   make(chan *Client, 64),
 		unregister: make(chan *Client, 64),
 		route:      make(chan routeMsg, 1024),
@@ -162,6 +166,59 @@ func (h *Hub) broadcastPresence(userID string, online bool) {
 			}
 		}
 	}
+}
+
+// HandlePublishKeys es POST /publish-keys — Flutter lo llama al registrar.
+// Guarda el bundle de claves públicas Signal Protocol del usuario.
+// Zero-knowledge: el relay nunca usa estas claves, solo las custodia.
+func (h *Hub) HandlePublishKeys(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	var bundle json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&bundle); err != nil {
+		http.Error(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+	// Extraer userId del bundle para indexarlo
+	var meta struct {
+		UserID string `json:"userId"`
+	}
+	if err := json.Unmarshal(bundle, &meta); err != nil || meta.UserID == "" {
+		http.Error(w, "missing userId in bundle", http.StatusBadRequest)
+		return
+	}
+	h.mu.Lock()
+	h.publicKeys[meta.UserID] = bundle
+	h.mu.Unlock()
+	log.Printf("[KEYS] bundle publicado para %s", meta.UserID)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"ok":true}`))
+}
+
+// HandleGetKeys es GET /keys/{userId} — Flutter lo llama para obtener
+// las claves públicas de un contacto y poder iniciar X3DH.
+func (h *Hub) HandleGetKeys(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	// /keys/{userId}
+	userID := strings.TrimPrefix(r.URL.Path, "/keys/")
+	if userID == "" {
+		http.Error(w, "userId requerido", http.StatusBadRequest)
+		return
+	}
+	h.mu.RLock()
+	bundle, ok := h.publicKeys[userID]
+	h.mu.RUnlock()
+	if !ok {
+		http.Error(w, "keys not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(bundle)
 }
 
 func extractMessageID(data []byte) string {

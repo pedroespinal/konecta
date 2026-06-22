@@ -2,7 +2,7 @@ name: konecta
 description: "Konecta - Mensajeria segura y privada"
 publish_to: 'none'
 
-version: 1.2.0+18
+version: 1.2.0+19
 
 environment:
   sdk: ^3.11.5
@@ -34,6 +34,7 @@ dependencies:
   # Criptografia — Signal Protocol + firma de autoria
   cryptography: ^2.7.0
   convert: ^3.1.2
+  crypto: ^3.0.3               # SHA-256 síncrono para certificate pinning
 
   # Internacionalizacion
   intl: ^0.20.2

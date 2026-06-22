@@ -105,7 +105,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           children: [
                             AnimatedBuilder(
                               animation: _pulseController,
-                              builder: (_, __) => Opacity(
+                              builder: (ctx, child) => Opacity(
                                 opacity: _pulseOpacity.value,
                                 child: Transform.scale(
                                   scale: _pulseScale.value,

@@ -16,7 +16,7 @@ class AppDatabase {
 
     return openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -86,12 +86,33 @@ class AppDatabase {
     await db.execute('CREATE INDEX idx_messages_chat ON messages(chat_id, sent_at DESC)');
     await db.execute('CREATE INDEX idx_messages_starred ON messages(is_starred)');
     await db.execute('CREATE INDEX idx_chats_pinned ON chats(is_pinned DESC, last_message_at DESC)');
+
+    await _createCallsTable(db);
+  }
+
+  Future<void> _createCallsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE calls (
+        id TEXT PRIMARY KEY,
+        peer_id TEXT NOT NULL,
+        peer_name TEXT NOT NULL,
+        is_video INTEGER DEFAULT 0,
+        direction INTEGER NOT NULL,
+        outcome INTEGER NOT NULL,
+        started_at INTEGER NOT NULL,
+        duration_seconds INTEGER DEFAULT 0
+      )
+    ''');
+    await db.execute('CREATE INDEX idx_calls_started ON calls(started_at DESC)');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute(
           'ALTER TABLE chats ADD COLUMN last_message_preview TEXT');
+    }
+    if (oldVersion < 3) {
+      await _createCallsTable(db);
     }
   }
 
