@@ -25,6 +25,7 @@ class MessagePayload {
   final PayloadType type;
   final String from;        // userId del emisor
   final String to;          // userId del receptor
+  final String chatId;      // chatId explícito — necesario para FCM offline
   final String ciphertext;  // contenido cifrado (base64)
   final String messageId;
   final int timestamp;
@@ -34,6 +35,7 @@ class MessagePayload {
     required this.type,
     required this.from,
     required this.to,
+    this.chatId = '',
     required this.ciphertext,
     required this.messageId,
     required this.timestamp,
@@ -44,6 +46,7 @@ class MessagePayload {
         'type': type.index,
         'from': from,
         'to': to,
+        if (chatId.isNotEmpty) 'chatId': chatId,
         'ciphertext': ciphertext,
         'messageId': messageId,
         'timestamp': timestamp,
@@ -53,12 +56,13 @@ class MessagePayload {
   factory MessagePayload.fromJson(String raw) {
     final map = jsonDecode(raw) as Map<String, dynamic>;
     return MessagePayload(
-      type: PayloadType.values[map['type'] as int],
-      from: map['from'] as String,
-      to: map['to'] as String,
-      ciphertext: map['ciphertext'] as String,
-      messageId: map['messageId'] as String,
-      timestamp: map['timestamp'] as int,
+      type: PayloadType.values[(map['type'] as num).toInt()],
+      from: map['from'] as String? ?? '',
+      to: map['to'] as String? ?? '',
+      chatId: map['chatId'] as String? ?? '',
+      ciphertext: map['ciphertext'] as String? ?? '',
+      messageId: map['messageId'] as String? ?? '',
+      timestamp: (map['timestamp'] as num?)?.toInt() ?? 0,
       metadata: map['metadata'] as Map<String, dynamic>?,
     );
   }
@@ -85,11 +89,13 @@ class PresencePayload {
 
 class TypingPayload {
   final String from;
+  final String to;
   final String chatId;
   final bool isTyping;
 
   const TypingPayload({
     required this.from,
+    this.to = '',
     required this.chatId,
     required this.isTyping,
   });
@@ -97,6 +103,7 @@ class TypingPayload {
   String toJson() => jsonEncode({
         'type': PayloadType.typingIndicator.index,
         'from': from,
+        if (to.isNotEmpty) 'to': to,
         'chatId': chatId,
         'isTyping': isTyping,
       });

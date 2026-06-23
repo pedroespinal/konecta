@@ -1,7 +1,7 @@
 # Guía de Usuario — Konecta v1.2.0
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.2.0 (build 19) — 22 de junio de 2026
+**Versión:** 1.2.0 (build 20) — 22 de junio de 2026
 
 ---
 
@@ -215,6 +215,15 @@ Cuando haya una versión nueva disponible en GitHub:
 
 ---
 
+## Novedades en v1.2.0+20
+
+| Función | Descripción |
+|---------|-------------|
+| 🔄 Reconexión automática | El WebSocket se reconecta solo si el relay cae o la red se interrumpe |
+| 📨 Mensajes offline | Los mensajes FCM que llegan cuando estás sin conexión ya se guardan correctamente |
+| 💬 Indicadores de escritura | El "escribiendo…" ahora llega al destinatario |
+| 🟢 Estado en línea | El indicador de presencia funciona correctamente |
+
 ## Novedades en v1.2.0
 
 | Función | Descripción |
@@ -275,6 +284,7 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| **1.2.0+20** | jun 2026 | **Mensajería restaurada — 6 bugs de pipeline corregidos**: reconexión automática WebSocket tras caída del relay; `chatId` incluido en todos los mensajes (FCM offline ahora funciona correctamente); presencia en línea corregida; indicadores de escritura ahora llegan al peer; `receiveMessage` idempotente (sin doble conteo de no leídos); `MessagePayload.fromJson` defensivo ante tipos numéricos |
 | **1.2.0+19** | jun 2026 | **4 bugs críticos corregidos**: OTP fake eliminado (registro solo por usuario); historial de llamadas real en SQLite (con swipe para borrar); certificate pinning con SHA-256 correcto; claves E2E publicadas al relay al registrar |
 | **1.2.0+18** | jun 2026 | Canal Android konecta_messages para FCM; registro HTTP del token FCM en el relay; Cian Digital (paleta + animaciones) |
 | **1.2.0+16** | jun 2026 | **Versión visible**: chip de versión en el app bar de Chats + footer activado; **Guía de usuario** integrada en la app (menú ⋮ → Guía de usuario, también en Ajustes → Acerca de) con 6 secciones: Mensajes, Contactos, Llamadas, Seguridad, Ajustes y Acerca de |

@@ -142,10 +142,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   void _onTypingChanged(bool isTyping) {
     final myUserId = ref.read(authProvider).profile?.userId ?? '';
+    final peer = _peerFromChatId(widget.chat.id, myUserId);
     final socket = ref.read(socketProvider.notifier);
     socket.sendTyping(
       TypingPayload(
         from: myUserId,
+        to: peer,
         chatId: widget.chat.id,
         isTyping: isTyping,
       ),

@@ -81,15 +81,16 @@ class KonectaSocketClient extends StateNotifier<SocketState> {
           _messageController.add(MessagePayload.fromJson(raw));
         case PayloadType.presenceUpdate:
           _presenceController.add(PresencePayload(
-            userId: map['userId'] as String,
-            isOnline: map['isOnline'] as bool,
-            lastSeenTimestamp: map['lastSeen'] as int?,
+            userId: map['from'] as String? ?? map['userId'] as String? ?? '',
+            isOnline: map['isOnline'] as bool? ?? false,
+            lastSeenTimestamp: (map['lastSeen'] as num?)?.toInt(),
           ));
         case PayloadType.typingIndicator:
           _typingController.add(TypingPayload(
-            from: map['from'] as String,
-            chatId: map['chatId'] as String,
-            isTyping: map['isTyping'] as bool,
+            from: map['from'] as String? ?? '',
+            to: map['to'] as String? ?? '',
+            chatId: map['chatId'] as String? ?? '',
+            isTyping: map['isTyping'] as bool? ?? false,
           ));
         case PayloadType.pong:
           break;
@@ -109,11 +110,16 @@ class KonectaSocketClient extends StateNotifier<SocketState> {
 
   void _onError(Object error) {
     state = SocketState(status: SocketStatus.error, error: error.toString());
+    // _onDone se dispara justo después — la reconexión la maneja allí
   }
 
   void _onDone() {
-    state = const SocketState(status: SocketStatus.disconnected);
     _pingTimer?.cancel();
+    state = const SocketState(status: SocketStatus.disconnected);
+    // Auto-reconexión: el relay puede reiniciarse o caer la red
+    if (_userId != null) {
+      _scheduleReconnect(_userId!, _authToken ?? _userId!);
+    }
   }
 
   void send(String payload) {

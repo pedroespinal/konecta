@@ -26,7 +26,8 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   StreamSubscription? _msgSub;
 
@@ -40,6 +41,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _connectWebSocket();
       _checkForUpdate();
@@ -49,9 +51,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _msgSub?.cancel();
     ref.read(socketProvider.notifier).disconnect();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final status = ref.read(socketProvider).status;
+      if (status == SocketStatus.disconnected || status == SocketStatus.error) {
+        _connectWebSocket();
+      }
+    }
   }
 
   /// Conecta el WebSocket relay y activa el listener global de mensajes entrantes.
@@ -83,8 +96,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _onSocketMessage(MessagePayload payload) async {
     final myUserId = ref.read(authProvider).profile?.userId ?? '';
-    final sorted = [payload.from, myUserId]..sort();
-    final chatId = 'chat_${sorted.join('_')}';
+    // Usar chatId del payload cuando está disponible (v1.2.1+).
+    // Fallback: derivar de from + myUserId para chats individuales.
+    final chatId = payload.chatId.isNotEmpty
+        ? payload.chatId
+        : 'chat_${([payload.from, myUserId]..sort()).join('_')}';
     try {
       await ref.read(chatRepositoryProvider).receiveMessage(payload, chatId);
       ref.invalidate(chatsProvider);

@@ -133,6 +133,7 @@ class ChatRepository {
       type: PayloadType.message,
       from: msg.senderId,
       to: _peerUserId(msg.chatId, msg.senderId),
+      chatId: msg.chatId,
       ciphertext: msg.encryptedContent,
       messageId: msg.id,
       timestamp: msg.sentAt.millisecondsSinceEpoch,
@@ -153,9 +154,11 @@ class ChatRepository {
   }
 
   Future<MessageModel?> receiveMessage(MessagePayload payload, String chatId) async {
+    if (payload.messageId.isEmpty || payload.ciphertext.isEmpty) return null;
+
     // Crear el chat si no existe aún
-    final existing = await _chatsDao.getById(chatId);
-    if (existing == null) {
+    final existingChat = await _chatsDao.getById(chatId);
+    if (existingChat == null) {
       await _chatsDao.upsert(ChatModel(
         id: chatId,
         type: ChatType.individual,
@@ -182,10 +185,16 @@ class ChatRepository {
       sentAt: DateTime.fromMillisecondsSinceEpoch(payload.timestamp),
       deliveredAt: DateTime.now(),
     );
-    await _messagesDao.insert(msg); // ConflictAlgorithm.replace — idempotente
-    await _chatsDao.incrementUnread(chatId);
-    await _chatsDao.updateLastMessage(chatId,
-        messageId: msg.id, preview: decrypted, sentAt: msg.sentAt);
+
+    // Idempotente: home_screen y chat_screen ambos escuchan el broadcast.
+    // Solo incrementar unread si el mensaje no estaba ya en la BD.
+    final isNew = !(await _messagesDao.existsById(payload.messageId));
+    await _messagesDao.insert(msg); // ConflictAlgorithm.replace — seguro siempre
+    if (isNew) {
+      await _chatsDao.incrementUnread(chatId);
+      await _chatsDao.updateLastMessage(chatId,
+          messageId: msg.id, preview: decrypted, sentAt: msg.sentAt);
+    }
     return msg;
   }
 

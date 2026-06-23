@@ -11,6 +11,13 @@ class MessagesDao {
         conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
+  Future<bool> existsById(String id) async {
+    final db = await _db.database;
+    final count = Sqflite.firstIntValue(
+        await db.rawQuery('SELECT COUNT(*) FROM messages WHERE id = ?', [id]));
+    return (count ?? 0) > 0;
+  }
+
   Future<List<MessageModel>> getForChat(
     String chatId, {
     int limit = 50,
