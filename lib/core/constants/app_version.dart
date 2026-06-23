@@ -1,10 +1,10 @@
 // ARCHIVO GENERADO AUTOMATICAMENTE — no editar a mano
 // Actualizado por: dart run tool/bump_version.dart
 abstract final class AppVersion {
-  static const String version = '1.2.0';
-  static const int buildNumber = 20;
-  static const String fullVersion = '1.2.0+20';
-  static const String displayVersion = 'v1.2.0 (build 20)';
+  static const String version = '1.2.1';
+  static const int buildNumber = 21;
+  static const String fullVersion = '1.2.1+21';
+  static const String displayVersion = 'v1.2.1 (build 21)';
 
   // Historial de cambios — se actualiza con cada version aprobada
   static const List<VersionEntry> changelog = [

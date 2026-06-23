@@ -1,14 +1,15 @@
-// dart run tool/bump_version.dart [patch|minor|major]
+// dart run tool/bump_version.dart [patch|minor|major|build]
 //
 // Incrementa el numero de version en pubspec.yaml y actualiza
 // lib/core/constants/app_version.dart automaticamente.
 // Ejecutar antes de cada build oficial.
 //
 // Uso:
-//   dart run tool/bump_version.dart         -> incrementa build number (+1)
-//   dart run tool/bump_version.dart patch   -> incrementa parche (1.0.0 -> 1.0.1)
-//   dart run tool/bump_version.dart minor   -> incrementa menor (1.0.0 -> 1.1.0)
-//   dart run tool/bump_version.dart major   -> incrementa mayor (1.0.0 -> 2.0.0)
+//   dart run tool/bump_version.dart         -> incrementa parche + build (1.2.0 -> 1.2.1)  ← DEFAULT
+//   dart run tool/bump_version.dart patch   -> igual que el default
+//   dart run tool/bump_version.dart minor   -> incrementa menor (1.2.0 -> 1.3.0)
+//   dart run tool/bump_version.dart major   -> incrementa mayor (1.2.0 -> 2.0.0)
+//   dart run tool/bump_version.dart build   -> solo build number, sin tocar version (1.2.0+20 -> 1.2.0+21)
 
 import 'dart:io';
 
@@ -29,7 +30,7 @@ void main(List<String> args) {
   int patch = int.parse(match.group(3)!);
   int build = int.parse(match.group(4)!);
 
-  final type = args.isNotEmpty ? args[0] : 'build';
+  final type = args.isNotEmpty ? args[0] : 'patch';
 
   switch (type) {
     case 'major':

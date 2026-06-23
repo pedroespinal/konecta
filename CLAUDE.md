@@ -6,9 +6,13 @@ Cada vez que se completa una fase, fix importante o feature nueva, el ciclo de r
 
 ### 1. Bump de versión
 ```powershell
-dart run tool/bump_version.dart   # sube el build number automáticamente
+dart run tool/bump_version.dart           # patch (default): 1.2.0 → 1.2.1  ← usar para bug fixes
+dart run tool/bump_version.dart minor     # minor: 1.2.0 → 1.3.0             ← usar para features nuevas
+dart run tool/bump_version.dart major     # major: 1.2.0 → 2.0.0             ← breaking changes
+dart run tool/bump_version.dart build     # solo build number, sin tocar versión (uso interno)
 ```
-O editar manualmente `pubspec.yaml` y `lib/core/constants/app_version.dart`.
+**POLÍTICA:** cada release a usuarios debe subir la versión visible. Usar `patch` para fixes,
+`minor` para features nuevas, `major` para cambios de arquitectura.
 
 ### 2. Firmar el build
 ```powershell
