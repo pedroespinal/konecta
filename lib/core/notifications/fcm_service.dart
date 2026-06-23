@@ -2,28 +2,25 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../database/daos/chats_dao.dart';
-import '../database/daos/messages_dao.dart';
-import '../database/models/chat_model.dart';
-import '../database/models/message_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../router/app_router.dart';
 
+const _kPendingBgKey = 'pending_fcm_background_messages';
+
 // ─── Background handler (top-level, fuera de clase) ──────────────────────────
-// Firebase lo invoca en un Isolate separado cuando la app está CERRADA o en BG.
-// DEBE guardar el mensaje en SQLite para que aparezca aunque el usuario
-// abra la app sin tocar la notificación.
+// Firebase lo invoca en un Isolate separado cuando la app está CERRADA.
+// sqflite NO funciona en este isolate (platform channels no registradas).
+// Solución: guardar los datos crudos en SharedPreferences y procesarlos
+// en el hilo principal cuando la app abra.
 @pragma('vm:entry-point')
 Future<void> onBackgroundMessage(RemoteMessage message) async {
-  WidgetsFlutterBinding.ensureInitialized();
-
   final data = message.data;
   final ciphertext = data['ciphertext'];
   final chatId     = data['chatId'];
   final from       = data['from'];
   final messageId  = data['messageId'];
-  final ts         = int.tryParse(data['timestamp'] ?? '');
 
   if (ciphertext == null || chatId == null || chatId.isEmpty ||
       from == null || messageId == null || messageId.isEmpty) {
@@ -31,42 +28,14 @@ Future<void> onBackgroundMessage(RemoteMessage message) async {
   }
 
   try {
-    final messagesDao = MessagesDao();
-    final chatsDao    = ChatsDao();
-
-    if (await messagesDao.existsById(messageId)) return; // ya procesado
-
-    final sentAt = ts != null
-        ? DateTime.fromMillisecondsSinceEpoch(ts)
-        : DateTime.now();
-
-    await messagesDao.insert(MessageModel(
-      id: messageId,
-      chatId: chatId,
-      senderId: from,
-      type: MessageType.text,
-      encryptedContent: ciphertext,
-      status: MessageStatus.delivered,
-      sentAt: sentAt,
-      deliveredAt: DateTime.now(),
-    ));
-
-    final existingChat = await chatsDao.getById(chatId);
-    if (existingChat == null) {
-      await chatsDao.upsert(ChatModel(
-        id: chatId,
-        type: ChatType.individual,
-        name: from,
-        createdAt: DateTime.now(),
-      ));
-    }
-    await chatsDao.incrementUnread(chatId);
-    await chatsDao.updateLastMessage(chatId,
-        messageId: messageId,
-        preview: '🔒 Mensaje nuevo',
-        sentAt: sentAt);
+    // SharedPreferences SÍ funciona en background isolates de Firebase.
+    // Guardamos el mensaje completo para procesarlo cuando la app abra.
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList(_kPendingBgKey) ?? [];
+    existing.add(jsonEncode(Map<String, String>.from(data)));
+    await prefs.setStringList(_kPendingBgKey, existing);
   } catch (e) {
-    debugPrint('[FCM] background save error: $e');
+    debugPrint('[FCM] background store error: $e');
   }
 }
 
@@ -151,6 +120,23 @@ class FcmService {
       debugPrint('[FCM] token registrado en relay para $userId');
     } catch (e) {
       debugPrint('[FCM] error registrando token: $e');
+    }
+  }
+
+  // ── Mensajes guardados por onBackgroundMessage ───────────────────────────
+  // Devuelve los mensajes pendientes y los borra de SharedPreferences.
+  // Llamar desde el hilo principal (sqflite funciona aquí).
+  static Future<List<Map<String, String>>> popPendingBackgroundMessages() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getStringList(_kPendingBgKey);
+      if (raw == null || raw.isEmpty) return [];
+      await prefs.remove(_kPendingBgKey);
+      return raw
+          .map((s) => Map<String, String>.from(jsonDecode(s) as Map))
+          .toList();
+    } catch (_) {
+      return [];
     }
   }
 

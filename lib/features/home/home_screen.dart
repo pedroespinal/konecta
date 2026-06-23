@@ -110,21 +110,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   /// Procesa mensajes recibidos via FCM cuando el usuario estaba offline,
   /// y navega al chat pendiente si lo hay.
   Future<void> _handlePendingFcm() async {
-    // 1. Guardar mensaje FCM en BD local
+    final repo = ref.read(chatRepositoryProvider);
+    bool didReceive = false;
+
+    // 1. Mensajes guardados por onBackgroundMessage (app estaba cerrada).
+    //    Se guardaron en SharedPreferences; los procesamos aquí en el hilo
+    //    principal donde sqflite sí funciona.
+    final bgMessages = await FcmService.popPendingBackgroundMessages();
+    for (final data in bgMessages) {
+      try {
+        await repo.receiveFcmMessage(data);
+        didReceive = true;
+      } catch (_) {}
+    }
+
+    // 2. Mensaje guardado al tocar una notificación (onMessageOpenedApp /
+    //    getInitialMessage).
     final msgData = FcmService.pendingMessageData;
     if (msgData != null) {
       FcmService.clearPendingMessageData();
       try {
-        await ref.read(chatRepositoryProvider).receiveFcmMessage(msgData);
-        ref.invalidate(chatsProvider);
+        await repo.receiveFcmMessage(msgData);
+        didReceive = true;
       } catch (_) {}
     }
 
-    // 2. Navegar al chat pendiente
+    if (didReceive) ref.invalidate(chatsProvider);
+
+    // 3. Navegar al chat pendiente (si el usuario tocó la notificación).
     final chatId = FcmService.pendingChatId;
     if (chatId == null) return;
     FcmService.clearPendingChatId();
-    final chats = await ref.read(chatRepositoryProvider).loadChats();
+    final chats = await repo.loadChats();
     final chat = chats.where((c) => c.id == chatId).firstOrNull;
     if (chat != null && mounted) {
       Navigator.of(context).push(

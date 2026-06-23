@@ -48,7 +48,7 @@ abstract final class UpdateChecker {
       fetchTimeout: const Duration(seconds: 10),
       // En producción usar 1 hora; en debug 0 para pruebas instantáneas
       minimumFetchInterval:
-          kDebugMode ? Duration.zero : const Duration(hours: 1),
+          kDebugMode ? Duration.zero : const Duration(minutes: 15),
     ));
 
     // Valores por defecto (funcionan offline o si RC no está configurado)

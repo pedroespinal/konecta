@@ -284,7 +284,8 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **1.2.2** | jun 2026 | **Mensajes offline funcionando**: `onBackgroundMessage` ahora guarda el mensaje en SQLite aunque la app esté cerrada; el mensaje aparece al abrir la app aunque no se toque la notificación; `receiveFcmMessage` idempotente |
+| **1.2.3** | jun 2026 | **Fix definitivo mensajes offline**: `onBackgroundMessage` guarda en SharedPreferences (sqflite no funciona en background isolates); HomeScreen los procesa al abrir; RC fetch interval reducido a 15 min |
+| **1.2.2** | jun 2026 | **Mensajes offline (parcial)**: intento de guardar en SQLite desde background — reemplazado en 1.2.3 |
 | **1.2.1** | jun 2026 | **Mensajería restaurada — 6 bugs de pipeline corregidos**: reconexión automática WebSocket tras caída del relay; `chatId` incluido en todos los mensajes; presencia en línea corregida; indicadores de escritura al peer; `receiveMessage` idempotente |
 | **1.2.0+19** | jun 2026 | **4 bugs críticos corregidos**: OTP fake eliminado (registro solo por usuario); historial de llamadas real en SQLite (con swipe para borrar); certificate pinning con SHA-256 correcto; claves E2E publicadas al relay al registrar |
 | **1.2.0+18** | jun 2026 | Canal Android konecta_messages para FCM; registro HTTP del token FCM en el relay; Cian Digital (paleta + animaciones) |
