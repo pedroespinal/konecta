@@ -97,7 +97,7 @@ async function main() {
       latest_version:       { defaultValue: { value: ver }, description: 'Version mas reciente de Konecta', valueType: 'STRING' },
       update_check_enabled: { defaultValue: { value: 'true' }, description: 'Habilitar verificacion de actualizaciones', valueType: 'BOOLEAN' },
       min_required_version: { defaultValue: { value: '1.0.0' }, description: 'Version minima soportada', valueType: 'STRING' },
-      update_url:           { defaultValue: { value: `https://github.com/pedroespinal/konecta/releases/tag/v${ver}` }, description: 'URL de descarga', valueType: 'STRING' },
+      update_url:           { defaultValue: { value: `https://github.com/pedroespinal/konecta/releases/download/v${ver}/konecta-v${ver}.apk` }, description: 'URL de descarga', valueType: 'STRING' },
       release_notes_es:     { defaultValue: { value: `v${ver}: Mensajes funcionando, emojis, compartir QR, directorio telefonico` }, description: 'Notas en Espanol', valueType: 'STRING' },
       release_notes_en:     { defaultValue: { value: `v${ver}: Messages working, emoji picker, QR sharing, phone contacts directory` }, description: 'Release notes in English', valueType: 'STRING' },
     }
