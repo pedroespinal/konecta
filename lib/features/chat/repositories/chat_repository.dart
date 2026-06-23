@@ -282,14 +282,12 @@ class ChatRepository {
   /// Crea el chat si no existe. Se llama desde HomeScreen al iniciar.
   Future<void> receiveFcmMessage(Map<String, String> data) async {
     final ciphertext = data['ciphertext'];
-    final chatId = data['chatId'];
-    final from = data['from'];
-    final messageId = data['messageId'];
-    final ts = int.tryParse(data['timestamp'] ?? '');
-    if (ciphertext == null ||
-        chatId == null ||
-        from == null ||
-        messageId == null) {
+    final chatId     = data['chatId'];
+    final from       = data['from'];
+    final messageId  = data['messageId'];
+    final ts         = int.tryParse(data['timestamp'] ?? '');
+    if (ciphertext == null || chatId == null || chatId.isEmpty ||
+        from == null || messageId == null || messageId.isEmpty) {
       return;
     }
 
@@ -306,6 +304,9 @@ class ChatRepository {
 
     final sentAt =
         ts != null ? DateTime.fromMillisecondsSinceEpoch(ts) : DateTime.now();
+
+    // Idempotente: onBackgroundMessage puede haber guardado el mensaje antes
+    final isNew = !(await _messagesDao.existsById(messageId));
     await _messagesDao.insert(MessageModel(
       id: messageId,
       chatId: chatId,
@@ -316,13 +317,11 @@ class ChatRepository {
       sentAt: sentAt,
       deliveredAt: DateTime.now(),
     ));
-    await _chatsDao.incrementUnread(chatId);
-    await _chatsDao.updateLastMessage(
-      chatId,
-      messageId: messageId,
-      preview: '🔒 Mensaje nuevo',
-      sentAt: sentAt,
-    );
+    if (isNew) {
+      await _chatsDao.incrementUnread(chatId);
+      await _chatsDao.updateLastMessage(chatId,
+          messageId: messageId, preview: '🔒 Mensaje nuevo', sentAt: sentAt);
+    }
   }
 }
 

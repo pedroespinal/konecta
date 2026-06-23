@@ -2,7 +2,7 @@ name: konecta
 description: "Konecta - Mensajeria segura y privada"
 publish_to: 'none'
 
-version: 1.2.1+21
+version: 1.2.2+22
 
 environment:
   sdk: ^3.11.5

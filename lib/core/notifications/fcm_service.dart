@@ -2,17 +2,72 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../database/daos/chats_dao.dart';
+import '../database/daos/messages_dao.dart';
+import '../database/models/chat_model.dart';
+import '../database/models/message_model.dart';
 import '../router/app_router.dart';
 
 // ─── Background handler (top-level, fuera de clase) ──────────────────────────
-// Firebase lo invoca en un Isolate separado cuando la app está CERRADA.
-// Android muestra la notificación automáticamente usando el campo "notification"
-// del mensaje FCM — no necesitamos hacer nada aquí.
+// Firebase lo invoca en un Isolate separado cuando la app está CERRADA o en BG.
+// DEBE guardar el mensaje en SQLite para que aparezca aunque el usuario
+// abra la app sin tocar la notificación.
 @pragma('vm:entry-point')
 Future<void> onBackgroundMessage(RemoteMessage message) async {
-  debugPrint('[FCM] background: ${message.notification?.title}');
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final data = message.data;
+  final ciphertext = data['ciphertext'];
+  final chatId     = data['chatId'];
+  final from       = data['from'];
+  final messageId  = data['messageId'];
+  final ts         = int.tryParse(data['timestamp'] ?? '');
+
+  if (ciphertext == null || chatId == null || chatId.isEmpty ||
+      from == null || messageId == null || messageId.isEmpty) {
+    return;
+  }
+
+  try {
+    final messagesDao = MessagesDao();
+    final chatsDao    = ChatsDao();
+
+    if (await messagesDao.existsById(messageId)) return; // ya procesado
+
+    final sentAt = ts != null
+        ? DateTime.fromMillisecondsSinceEpoch(ts)
+        : DateTime.now();
+
+    await messagesDao.insert(MessageModel(
+      id: messageId,
+      chatId: chatId,
+      senderId: from,
+      type: MessageType.text,
+      encryptedContent: ciphertext,
+      status: MessageStatus.delivered,
+      sentAt: sentAt,
+      deliveredAt: DateTime.now(),
+    ));
+
+    final existingChat = await chatsDao.getById(chatId);
+    if (existingChat == null) {
+      await chatsDao.upsert(ChatModel(
+        id: chatId,
+        type: ChatType.individual,
+        name: from,
+        createdAt: DateTime.now(),
+      ));
+    }
+    await chatsDao.incrementUnread(chatId);
+    await chatsDao.updateLastMessage(chatId,
+        messageId: messageId,
+        preview: '🔒 Mensaje nuevo',
+        sentAt: sentAt);
+  } catch (e) {
+    debugPrint('[FCM] background save error: $e');
+  }
 }
 
 // ─── Servicio ─────────────────────────────────────────────────────────────────

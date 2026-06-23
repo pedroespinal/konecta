@@ -1,7 +1,7 @@
 # Guía de Usuario — Konecta v1.2.0
 
 **Creado por:** Pedro Espinal  
-**Versión:** 1.2.1 (build 21) — 22 de junio de 2026
+**Versión:** 1.2.2 (build 22) — 23 de junio de 2026
 
 ---
 
@@ -284,7 +284,8 @@ En el Android Keystore, respaldado por hardware. Son inaccesibles sin tu PIN o b
 
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
-| **1.2.1** | jun 2026 | **Mensajería restaurada — 6 bugs de pipeline corregidos**: reconexión automática WebSocket tras caída del relay; `chatId` incluido en todos los mensajes (FCM offline ahora funciona correctamente); presencia en línea corregida; indicadores de escritura ahora llegan al peer; `receiveMessage` idempotente (sin doble conteo de no leídos); `MessagePayload.fromJson` defensivo ante tipos numéricos |
+| **1.2.2** | jun 2026 | **Mensajes offline funcionando**: `onBackgroundMessage` ahora guarda el mensaje en SQLite aunque la app esté cerrada; el mensaje aparece al abrir la app aunque no se toque la notificación; `receiveFcmMessage` idempotente |
+| **1.2.1** | jun 2026 | **Mensajería restaurada — 6 bugs de pipeline corregidos**: reconexión automática WebSocket tras caída del relay; `chatId` incluido en todos los mensajes; presencia en línea corregida; indicadores de escritura al peer; `receiveMessage` idempotente |
 | **1.2.0+19** | jun 2026 | **4 bugs críticos corregidos**: OTP fake eliminado (registro solo por usuario); historial de llamadas real en SQLite (con swipe para borrar); certificate pinning con SHA-256 correcto; claves E2E publicadas al relay al registrar |
 | **1.2.0+18** | jun 2026 | Canal Android konecta_messages para FCM; registro HTTP del token FCM en el relay; Cian Digital (paleta + animaciones) |
 | **1.2.0+16** | jun 2026 | **Versión visible**: chip de versión en el app bar de Chats + footer activado; **Guía de usuario** integrada en la app (menú ⋮ → Guía de usuario, también en Ajustes → Acerca de) con 6 secciones: Mensajes, Contactos, Llamadas, Seguridad, Ajustes y Acerca de |
