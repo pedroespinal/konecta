@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,23 +23,25 @@ type routeMsg struct {
 // Nunca almacena mensajes ni descifra ciphertext — solo reenvía.
 type Hub struct {
 	mu         sync.RWMutex
-	clients    map[string]*Client       // userID -> Client activo
-	fcmTokens  map[string]string        // userID -> FCM token (persiste tras desconexión)
-	publicKeys map[string]json.RawMessage // userID -> bundle de claves públicas Signal
+	clients    map[string]*Client
+	fcmTokens  map[string][]string      // userID -> lista de tokens FCM (múltiples dispositivos)
+	publicKeys map[string]json.RawMessage
 	register   chan *Client
 	unregister chan *Client
 	route      chan routeMsg
 }
 
 func NewHub() *Hub {
-	return &Hub{
+	h := &Hub{
 		clients:    make(map[string]*Client),
-		fcmTokens:  make(map[string]string),
+		fcmTokens:  make(map[string][]string),
 		publicKeys: make(map[string]json.RawMessage),
 		register:   make(chan *Client, 64),
 		unregister: make(chan *Client, 64),
 		route:      make(chan routeMsg, 1024),
 	}
+	h.loadTokens()
+	return h
 }
 
 func (h *Hub) Run() {
@@ -48,9 +51,12 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			h.clients[c.userID] = c
 			if c.fcmToken != "" {
-				h.fcmTokens[c.userID] = c.fcmToken
+				h.fcmTokens[c.userID] = addUniqueToken(h.fcmTokens[c.userID], c.fcmToken)
 			}
 			h.mu.Unlock()
+			if c.fcmToken != "" {
+				h.saveTokens()
+			}
 			log.Printf("connected: %s  total=%d", c.userID, h.clientCount())
 			h.broadcastPresence(c.userID, true)
 
@@ -67,13 +73,11 @@ func (h *Hub) Run() {
 		case msg := <-h.route:
 			h.mu.RLock()
 			dest, ok := h.clients[msg.to]
-			fcmToken := h.fcmTokens[msg.to]
 			h.mu.RUnlock()
 
 			if ok {
 				select {
 				case dest.send <- msg.data:
-					// Ack al emisor
 					ack, _ := json.Marshal(models.Envelope{
 						Type:      models.PayloadMessageAck,
 						MessageID: extractMessageID(msg.data),
@@ -86,18 +90,15 @@ func (h *Hub) Run() {
 					log.Printf("buffer lleno para %s", msg.to)
 				}
 			} else {
-				// Destinatario offline — enviar FCM push si hay token
-				h.pushOfflineMessage(fcmToken, msg.data)
+				// Destinatario offline — enviar FCM push a todos sus dispositivos
+				h.pushOfflineMessage(msg.to, msg.data)
 			}
 		}
 	}
 }
 
-// HandleRegisterToken es un endpoint HTTP POST /register-token que permite
-// a los clientes Flutter registrar su FCM token directamente via HTTP,
-// independientemente del WebSocket. Resuelve dos problemas:
-//   1. Race condition: el token FCM puede llegar después de la conexión WS.
-//   2. Relay restart: los tokens en memoria se pierden al reiniciar.
+// HandleRegisterToken registra el FCM token de un dispositivo via HTTP POST /register-token.
+// Admite múltiples tokens por usuario (múltiples dispositivos).
 func (h *Hub) HandleRegisterToken(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -112,20 +113,27 @@ func (h *Hub) HandleRegisterToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.mu.Lock()
-	h.fcmTokens[req.UserID] = req.FCMToken
+	h.fcmTokens[req.UserID] = addUniqueToken(h.fcmTokens[req.UserID], req.FCMToken)
 	h.mu.Unlock()
-	log.Printf("[FCM] token registrado via HTTP para %s", req.UserID)
+	h.saveTokens()
+	log.Printf("[FCM] token registrado via HTTP para %s (total tokens: %d)",
+		req.UserID, len(h.fcmTokens[req.UserID]))
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"ok":true}`))
 }
 
-// pushOfflineMessage envía un FCM push cuando el destinatario no está conectado.
-// Solo actúa para mensajes de texto (PayloadMessage).
-func (h *Hub) pushOfflineMessage(fcmToken string, data []byte) {
-	if fcmToken == "" {
+// pushOfflineMessage envía un FCM push a TODOS los dispositivos del destinatario offline.
+func (h *Hub) pushOfflineMessage(userID string, data []byte) {
+	h.mu.RLock()
+	tokens := make([]string, len(h.fcmTokens[userID]))
+	copy(tokens, h.fcmTokens[userID])
+	h.mu.RUnlock()
+
+	if len(tokens) == 0 {
 		return
 	}
+
 	var env models.Envelope
 	if err := json.Unmarshal(data, &env); err != nil {
 		return
@@ -141,8 +149,93 @@ func (h *Hub) pushOfflineMessage(fcmToken string, data []byte) {
 		"messageId":  env.MessageID,
 		"timestamp":  strconv.FormatInt(env.Timestamp, 10),
 	}
-	go fcm.Send(fcmToken, "Konecta", "Tienes un mensaje nuevo", pushData)
+
+	for _, token := range tokens {
+		token := token
+		go func() {
+			invalid := fcm.Send(token, "Konecta", "Tienes un mensaje nuevo", pushData)
+			if invalid {
+				h.removeToken(userID, token)
+			}
+		}()
+	}
 }
+
+// removeToken elimina un token FCM inválido de la lista del usuario.
+func (h *Hub) removeToken(userID, token string) {
+	h.mu.Lock()
+	list := h.fcmTokens[userID]
+	newList := list[:0]
+	for _, t := range list {
+		if t != token {
+			newList = append(newList, t)
+		}
+	}
+	if len(newList) == 0 {
+		delete(h.fcmTokens, userID)
+	} else {
+		h.fcmTokens[userID] = newList
+	}
+	h.mu.Unlock()
+	h.saveTokens()
+	log.Printf("[FCM] token inválido eliminado para %s", userID)
+}
+
+// addUniqueToken agrega token a la lista solo si no existe ya.
+func addUniqueToken(tokens []string, token string) []string {
+	for _, t := range tokens {
+		if t == token {
+			return tokens
+		}
+	}
+	return append(tokens, token)
+}
+
+// ── Persistencia de tokens FCM ────────────────────────────────────────────────
+// Los tokens se guardan en un archivo JSON para sobrevivir reinicios del proceso.
+// La ruta se configura con la variable TOKENS_FILE; por defecto /tmp/fcm_tokens.json.
+
+func tokensFilePath() string {
+	if p := os.Getenv("TOKENS_FILE"); p != "" {
+		return p
+	}
+	return "/tmp/fcm_tokens.json"
+}
+
+func (h *Hub) loadTokens() {
+	path := tokensFilePath()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return // archivo no existe aún, ok
+	}
+	var tokens map[string][]string
+	if err := json.Unmarshal(data, &tokens); err != nil {
+		log.Printf("[FCM] error cargando tokens: %v", err)
+		return
+	}
+	h.mu.Lock()
+	h.fcmTokens = tokens
+	h.mu.Unlock()
+	total := 0
+	for _, v := range tokens {
+		total += len(v)
+	}
+	log.Printf("[FCM] %d tokens cargados para %d usuarios", total, len(tokens))
+}
+
+func (h *Hub) saveTokens() {
+	h.mu.RLock()
+	data, err := json.Marshal(h.fcmTokens)
+	h.mu.RUnlock()
+	if err != nil {
+		return
+	}
+	if err := os.WriteFile(tokensFilePath(), data, 0644); err != nil {
+		log.Printf("[FCM] error guardando tokens: %v", err)
+	}
+}
+
+// ── Presencia y claves públicas ───────────────────────────────────────────────
 
 func (h *Hub) clientCount() int {
 	h.mu.RLock()
@@ -168,9 +261,6 @@ func (h *Hub) broadcastPresence(userID string, online bool) {
 	}
 }
 
-// HandlePublishKeys es POST /publish-keys — Flutter lo llama al registrar.
-// Guarda el bundle de claves públicas Signal Protocol del usuario.
-// Zero-knowledge: el relay nunca usa estas claves, solo las custodia.
 func (h *Hub) HandlePublishKeys(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -181,7 +271,6 @@ func (h *Hub) HandlePublishKeys(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-	// Extraer userId del bundle para indexarlo
 	var meta struct {
 		UserID string `json:"userId"`
 	}
@@ -197,14 +286,11 @@ func (h *Hub) HandlePublishKeys(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"ok":true}`))
 }
 
-// HandleGetKeys es GET /keys/{userId} — Flutter lo llama para obtener
-// las claves públicas de un contacto y poder iniciar X3DH.
 func (h *Hub) HandleGetKeys(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	// /keys/{userId}
 	userID := strings.TrimPrefix(r.URL.Path, "/keys/")
 	if userID == "" {
 		http.Error(w, "userId requerido", http.StatusBadRequest)

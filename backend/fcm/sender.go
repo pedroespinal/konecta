@@ -14,7 +14,6 @@ var msgClient *messaging.Client
 
 // Init inicializa el cliente Firebase Admin desde la variable de entorno
 // FIREBASE_SERVICE_ACCOUNT (JSON del service account de Firebase).
-// Si la variable no está configurada, el push queda desactivado silenciosamente.
 func Init() {
 	cred := os.Getenv("FIREBASE_SERVICE_ACCOUNT")
 	if cred == "" {
@@ -36,11 +35,11 @@ func Init() {
 	log.Println("[FCM] Firebase Admin inicializado")
 }
 
-// Send envía una notificación push al token dado con datos adjuntos.
-// Es silencioso (no devuelve error) para no bloquear el relay.
-func Send(fcmToken, title, body string, data map[string]string) {
+// Send envía un push FCM al token dado con título, cuerpo y datos adjuntos.
+// Retorna true si el token es inválido y debe eliminarse de la base de datos.
+func Send(fcmToken, title, body string, data map[string]string) bool {
 	if msgClient == nil || fcmToken == "" {
-		return
+		return false
 	}
 	msg := &messaging.Message{
 		Token: fcmToken,
@@ -52,10 +51,10 @@ func Send(fcmToken, title, body string, data map[string]string) {
 		Android: &messaging.AndroidConfig{
 			Priority: "high",
 			Notification: &messaging.AndroidNotification{
-				Title:       title,
-				Body:        body,
-				ChannelID:   "konecta_messages",
-				Priority:    messaging.PriorityHigh,
+				Title:        title,
+				Body:         body,
+				ChannelID:    "konecta_messages",
+				Priority:     messaging.PriorityHigh,
 				DefaultSound: true,
 			},
 		},
@@ -69,10 +68,17 @@ func Send(fcmToken, title, body string, data map[string]string) {
 			},
 		},
 	}
-	if _, err := msgClient.Send(context.Background(), msg); err != nil {
-		log.Printf("[FCM] error enviando push a token ...%s: %v",
-			safeToken(fcmToken), err)
+	_, err := msgClient.Send(context.Background(), msg)
+	if err != nil {
+		// Token expirado o inválido — avisar al hub para que lo elimine
+		if messaging.IsRegistrationTokenNotRegistered(err) ||
+			messaging.IsSenderIDMismatch(err) {
+			log.Printf("[FCM] token inválido ...%s: %v", safeToken(fcmToken), err)
+			return true
+		}
+		log.Printf("[FCM] error enviando push a ...%s: %v", safeToken(fcmToken), err)
 	}
+	return false
 }
 
 func safeToken(t string) string {
